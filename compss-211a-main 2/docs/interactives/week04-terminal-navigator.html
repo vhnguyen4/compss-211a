@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal navigator · COMPSS 211A</title>
+<meta name="description" content="A simulated terminal for practicing pwd, ls, cd, relative paths, running a Python script, and creating, moving, renaming, and deleting files.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Inter+Tight:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   COMPSS 211A shared design system
+   ============================================================ */
+:root{
+  --berkeley:#002676;
+  --ink:#1A1A1A;
+  --paper:#FFFFFF;
+  --card:#FFFFFF;
+  --gold:#FDBA12;
+  --gold-soft:#FFF1CC;
+  --blue-mid:#2A4D9B;
+  --line:#DDDDDD;
+  --ok:#1E7D4E;
+  --err:#B3403A;
+  --code-bg:#0E1B45;
+  --code-ink:#E8EDF6;
+  --font-display:"Inter Tight","Inter",-apple-system,"Segoe UI",sans-serif;
+  --font-body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --font-mono:"IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+*{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.55;
+}
+/* very subtle pure-CSS grain */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  z-index:0;
+  pointer-events:none;
+  background-size:7px 7px, 11px 11px;
+  background-position:0 0, 3px 5px;
+  opacity:.45;
+}
+.page{
+  position:relative; z-index:1;
+  max-width:980px;
+  margin:0 auto;
+  padding:20px 18px 40px;
+}
+
+a{ color:var(--blue-mid); }
+a:hover{ color:var(--berkeley); }
+:focus-visible{
+  outline:3px solid var(--gold);
+  outline-offset:2px;
+  border-radius:4px;
+}
+code{
+  font-family:var(--font-mono);
+  font-size:.9em;
+  background:rgba(18,35,61,.06);
+  border:1px solid rgba(18,35,61,.08);
+  border-radius:4px;
+  padding:.08em .34em;
+}
+.sr-only{
+  position:absolute; width:1px; height:1px;
+  padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+/* ---------- header ---------- */
+.backlink{
+  display:inline-block;
+  font-size:.85rem;
+  font-weight:600;
+  text-decoration:none;
+  margin-bottom:18px;
+}
+.backlink:hover{ text-decoration:underline; }
+header .eyebrow{
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--blue-mid);
+  margin:0 0 6px;
+}
+header h1{
+  font-family:var(--font-display);
+  font-weight:650;
+  color:var(--berkeley);
+  font-size:clamp(1.9rem, 4.6vw, 2.6rem);
+  line-height:1.12;
+  margin:0 0 12px;
+}
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+.chip{
+  display:inline-block;
+  font-size:.8rem;
+  font-weight:600;
+  padding:4px 12px;
+  border-radius:3px;
+}
+.chip-gold{ background:var(--gold); color:var(--ink); }
+.chip-outline{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+.promise{
+  margin:0 0 16px;
+  max-width:62ch;
+  font-size:1.02rem;
+}
+.gold-rule{
+  height:3px;
+  background:var(--gold);
+  border:0;
+  margin:0 0 22px;
+  border-radius:2px;
+}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:4px;
+  box-shadow:0 1px 2px rgba(18,35,61,.05), 0 6px 18px rgba(18,35,61,.05);
+  padding:18px 20px;
+}
+.card h2{
+  font-family:var(--font-display);
+  font-weight:600;
+  color:var(--berkeley);
+  font-size:1.2rem;
+  margin:0 0 10px;
+}
+.card p{ margin:0 0 10px; }
+.card p:last-child{ margin-bottom:0; }
+
+/* ---------- intro ---------- */
+.intro{ margin-bottom:18px; }
+.anatomy{
+  display:flex; gap:10px; flex-wrap:wrap;
+  margin:14px 0;
+}
+.apart{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:8px 14px;
+  border:1px dashed var(--line);
+  border-radius:4px;
+  background:rgba(18,35,61,.02);
+}
+.apart code{ background:transparent; border:0; font-size:1rem; font-weight:500; padding:0; }
+.apart:nth-child(1) code{ color:var(--berkeley); }
+.apart:nth-child(2) code{ color:var(--blue-mid); }
+.apart:nth-child(3) code{ color:var(--ok); }
+.apart span{
+  font-size:.72rem; font-weight:600;
+  letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink); opacity:.75;
+}
+.hintchips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.hintchip{
+  font-size:.8rem;
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:3px;
+  padding:3px 11px;
+}
+.hintchip code{ background:transparent; border:0; padding:0; }
+
+/* ---------- layout ---------- */
+/* Tree beside the terminal; the checklist runs below the terminal. The strip
+   above the terminal always names the current mission. */
+.layout{ display:grid; gap:18px; }
+@media (min-width:900px){
+  .layout{
+    grid-template-columns:minmax(0,1fr) 300px;
+    grid-template-areas:
+      "top side"
+      "missions side";
+    align-items:start;
+  }
+  .lay-top{ grid-area:top; }
+  .sidebar{ grid-area:side; }
+  .missions-card{ grid-area:missions; }
+  .sidebar-sticky{ position:sticky; top:14px; }
+}
+/* minmax(0,1fr) keeps the column at its track width even when a question card
+   with a wide fieldset sits in the slot; otherwise the column grows under the tree. */
+.lay-top{ display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }
+.q-slot{ min-width:0; }
+.qcard fieldset{ min-width:0; min-inline-size:0; }
+.sidebar{ display:grid; gap:14px; align-content:start; }
+.sidebar-sticky{ display:grid; gap:14px; }
+
+/* ---------- mission strip ---------- */
+.strip{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background:var(--gold-soft);
+  border:1px solid var(--gold);
+  border-left:5px solid var(--gold);
+  border-radius:4px;
+  padding:12px 14px;
+  font-size:1rem;
+}
+.mission.current{ background:var(--gold-soft); box-shadow:inset 3px 0 0 var(--gold); }
+.mission.current .mtext strong{ color:var(--ink); }
+.strip-badge{
+  flex:none;
+  font-size:.76rem; font-weight:600;
+  letter-spacing:.05em; text-transform:uppercase;
+  background:var(--gold-soft); color:var(--ink);
+  border-radius:3px; padding:3px 10px;
+}
+.strip.all-done{ border-left-color:var(--ok); }
+.strip.all-done .strip-badge{ background:var(--ok); color:#fff; }
+#strip-text code{ background:#fff; border-color:rgba(18,35,61,.18); color:var(--berkeley); font-weight:500; padding:2px 7px; white-space:nowrap; }
+.mission .mtext code, .qcard code{ white-space:nowrap; }
+
+/* ---------- terminal ---------- */
+.term-card{
+  padding:0;
+  overflow:hidden;
+  background:var(--code-bg);
+  border-color:#2A3A52;
+}
+.term-head{
+  display:flex; align-items:center; gap:7px;
+  padding:10px 14px;
+  background:#0A1524;
+  border-bottom:1px solid #24344C;
+}
+.term-head .dot{ width:11px; height:11px; border-radius:50%; flex:none; }
+.dot-r{ background:#E0574F; } .dot-y{ background:#E9B64D; } .dot-g{ background:#5DBB63; }
+.term-title{
+  margin-left:8px;
+  font-family:var(--font-mono);
+  font-size:.76rem;
+  color:#8FA3C4;
+}
+.term-body{
+  height:340px;
+  overflow-y:auto;
+  padding:14px 16px 6px;
+  font-family:var(--font-mono);
+  font-size:.875rem;
+  line-height:1.55;
+  cursor:text;
+}
+.t-line{ white-space:pre-wrap; word-break:break-word; min-height:1.2em; color:#D7DFEF; }
+.t-cmd{ color:var(--code-ink); }
+.t-prompt{ color:var(--gold); font-weight:500; }
+.t-out{ color:#D7DFEF; }
+.t-err{ color:#FFA49B; }
+.t-ok{ color:#7BD8A0; }
+.t-note{ color:#8FA3C4; font-style:italic; }
+.t-dim{ color:#8FA3C4; }
+.t-dir{ color:#7CC0FF; font-weight:500; }
+.term-input-row{
+  display:flex; align-items:baseline; gap:8px;
+  padding:4px 16px 12px;
+  font-family:var(--font-mono);
+  font-size:.875rem;
+  background:var(--code-bg);
+  cursor:text;
+}
+.input-wrap{ position:relative; flex:1; min-width:0; }
+#term-in{
+  width:100%;
+  background:transparent;
+  border:0;
+  color:var(--code-ink);
+  font-family:var(--font-mono);
+  font-size:.875rem;
+  line-height:1.55;
+  padding:0;
+  caret-color:transparent;
+}
+#term-in:focus-visible{ outline:none; }
+.term-input-row:focus-within{ box-shadow:inset 0 -3px 0 rgba(253,186,18,.55); }
+.block-cursor{
+  position:absolute;
+  top:.08em; left:0;
+  width:1ch; height:1.35em;
+  background:rgba(253,186,18,.4);
+  border:1px solid var(--gold);
+  border-radius:1px;
+  pointer-events:none;
+}
+.block-cursor.idle{ opacity:.35; }
+.term-hints{
+  padding:9px 16px 12px;
+  border-top:1px solid #24344C;
+  font-size:.76rem;
+  color:#8FA3C4;
+  font-family:var(--font-mono);
+}
+
+/* ---------- tree sidebar ---------- */
+.tree-cwd{
+  font-size:.78rem;
+  color:var(--ink);
+  margin:0 0 10px;
+}
+.tree-cwd code{ display:block; margin-top:3px; font-size:.82rem; overflow-wrap:anywhere; }
+.tree{
+  font-family:var(--font-mono);
+  font-size:.83rem;
+  line-height:1.35;
+  display:grid;
+  gap:2px;
+  margin-bottom:10px;
+}
+.trow{
+  display:flex; align-items:center; gap:7px;
+  padding:3px 8px 3px calc(var(--d) * 15px + 8px);
+  border-radius:4px;
+  border-left:3px solid transparent;
+}
+.trow .ticon{ flex:none; display:inline-flex; color:var(--blue-mid); }
+.trow.is-file .ticon{ color:#6B7A93; }
+.trow .tname{ word-break:break-all; }
+.trow .tmeta{ color:#6B7A93; font-size:.76rem; font-style:italic; }
+.trow.is-hidden .tname{ color:#6B7A93; }
+.trow.here{
+  background:var(--gold-soft);
+  border-left-color:var(--gold);
+}
+.here-pill{
+  margin-left:auto;
+  flex:none;
+  font-family:var(--font-body);
+  font-size:.66rem;
+  font-weight:600;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  background:var(--ink);
+  color:#FFE9BC;
+  border-radius:3px;
+  padding:1px 8px;
+}
+.tree-note{ font-size:.8rem; color:#4A5A74; margin:0; }
+
+/* ---------- four questions ---------- */
+.fourq ol{ margin:0; padding-left:20px; display:grid; gap:9px; font-size:.9rem; }
+.fourq li strong{ color:var(--berkeley); }
+.fourq li .fq-how{ display:block; font-size:.82rem; color:#4A5A74; }
+
+/* ---------- missions ---------- */
+.missions-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+.missions-head h2{ margin:0; }
+.mcount{
+  font-family:var(--font-mono);
+  font-size:.8rem;
+  font-weight:500;
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:3px;
+  padding:2px 10px;
+}
+ol.missions{ list-style:none; margin:0; padding:0; display:grid; gap:4px; }
+.mission{
+  display:grid;
+  grid-template-columns:26px minmax(0,1fr);
+  gap:10px;
+  padding:9px 8px;
+  border-radius:4px;
+  border-bottom:1px dashed var(--line);
+}
+ol.missions > .mission:last-child{ border-bottom:0; }
+.mission .mtext{ font-size:.93rem; }
+.mission .mtext strong{ color:var(--berkeley); }
+.mission .mq{ display:block; font-size:.8rem; color:#4A5A74; }
+.mission.done{ background:rgba(30,125,78,.05); }
+.mission.done .mtext{ opacity:.82; }
+.check{ margin-top:2px; }
+.check svg{ display:block; width:22px; height:22px; }
+.check .ring{ fill:#fff; stroke:var(--line); stroke-width:1.6; transition:none; }
+.check .tick{
+  fill:none; stroke:var(--ink); stroke-width:2.4;
+  stroke-linecap:round; stroke-linejoin:round;
+  stroke-dasharray:16; stroke-dashoffset:16;
+}
+.mission.done .ring{ fill:var(--gold); stroke:var(--gold); }
+.mission.done .tick{ stroke-dashoffset:0; }
+
+/* ---------- question cards ---------- */
+.qcard{
+  grid-column:1 / -1;
+  margin-top:8px;
+  border:1px solid var(--line);
+  border-left:4px solid var(--gold);
+  border-radius:4px;
+  background:var(--paper);
+  padding:13px 15px;
+}
+.q-slot .qcard{ margin-top:0; }
+.qmoved{ grid-column:1 / -1; margin:6px 0 0; font-size:.8rem; color:#4A5A74; font-style:italic; }
+.qcard.locked{ border-left-color:var(--line); }
+.qcard.locked .qbody{ display:none; }
+.qcard .qlock{
+  margin:0; font-size:.83rem; color:#4A5A74; font-style:italic;
+}
+.qcard:not(.locked) .qlock{ display:none; }
+.qcard fieldset{ border:0; margin:0; padding:0; }
+.qcard legend{
+  font-weight:600; font-size:.93rem; color:var(--berkeley);
+  padding:0; margin-bottom:9px;
+}
+.qopt{
+  display:grid; grid-template-columns:auto minmax(0,1fr); gap:9px;
+  align-items:start;
+  font-size:.89rem;
+  padding:7px 9px;
+  border:1px solid var(--line);
+  border-radius:4px;
+  background:var(--card);
+  margin-bottom:7px;
+  cursor:pointer;
+}
+.qopt input{ accent-color:var(--berkeley); margin-top:3px; width:15px; height:15px; }
+.qopt.picked-ok{ border-color:var(--ok); box-shadow:inset 0 0 0 1px var(--ok); }
+.qopt.picked-err{ border-color:var(--err); box-shadow:inset 0 0 0 1px var(--err); }
+.qcheck{
+  font:inherit; font-size:.87rem; font-weight:600;
+  background:var(--berkeley); color:#fff;
+  border:0; border-radius:4px;
+  padding:8px 16px;
+  cursor:pointer;
+  margin-top:2px;
+}
+.qcheck:hover{ background:#00437F; }
+.qcheck:disabled{ opacity:.55; cursor:default; }
+.qfeedback{ margin:9px 0 0; font-size:.87rem; }
+.qfeedback.fok{ color:var(--ok); font-weight:600; }
+.qfeedback.ferr{ color:var(--err); font-weight:600; }
+.qfeedback .fwhy{ font-weight:400; color:var(--ink); }
+
+/* ---------- explainer ---------- */
+.explainer{
+  margin-top:12px;
+  border-top:1px solid var(--line);
+  padding-top:11px;
+}
+.explainer h3{
+  font-family:var(--font-display); font-weight:600;
+  font-size:1.02rem; color:var(--berkeley);
+  margin:0 0 8px;
+}
+.explainer p{ font-size:.89rem; margin:0 0 8px; }
+.pathmap{
+  font-family:var(--font-mono);
+  font-size:.8rem;
+  background:var(--code-bg);
+  color:var(--code-ink);
+  border-radius:4px;
+  padding:10px 13px;
+  margin:0 0 9px;
+  overflow-x:auto;
+}
+.pathmap .pm-ok{ color:#7BD8A0; }
+.pathmap .pm-err{ color:#FFA49B; }
+.pathmap .pm-dim{ color:#8FA3C4; }
+.pathmap div{ white-space:pre; }
+
+/* ---------- recap ---------- */
+.recap{ margin-top:18px; }
+.recap ul{ margin:0; padding-left:20px; display:grid; gap:8px; font-size:.93rem; }
+.recap li strong{ color:var(--berkeley); }
+
+/* ---------- footer ---------- */
+footer{
+  margin-top:30px;
+  border-top:1px solid var(--line);
+  padding-top:14px;
+  font-size:.8rem;
+  color:#4A5A74;
+}
+
+/* ---------- motion ---------- */
+@media (prefers-reduced-motion: no-preference){
+  .reveal{
+    opacity:0;
+    transform:translateY(9px);
+    animation:fadeUp .5s ease forwards;
+    animation-delay:calc(var(--i, 0) * 70ms);
+  }
+  @keyframes fadeUp{ to{ opacity:1; transform:none; } }
+  .block-cursor{ animation:blink 1.15s step-end infinite; }
+  @keyframes blink{ 0%,55%{ opacity:1; } 56%,100%{ opacity:.12; } }
+  .block-cursor.idle{ animation:none; }
+  .mission.done .tick{ transition:stroke-dashoffset .45s ease .1s; }
+  .mission.done .ring{ transition:fill .3s ease, stroke .3s ease; }
+  .trow{ transition:background .3s ease; }
+  .trow.flash{ animation:flashRow 1.4s ease; }
+  @keyframes flashRow{
+    0%{ background:var(--gold-soft); }
+    100%{ background:transparent; }
+  }
+  .qcard:not(.locked) .qbody{ animation:fadeUp .45s ease; }
+}
+
+@media (max-width:520px){
+  .page{ padding:16px 12px 32px; }
+  .card{ padding:15px 14px; }
+  .term-body{ height:300px; }
+}
+
+/* ═══ MaCSS skin, aligned with macss.berkeley.edu ═══ */
+html,body{overflow-x:clip}
+.mast{background:var(--berkeley);margin:0 calc(50% - 50vw);padding:12px calc(50vw - 50%);display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.14)}
+.mast .brand{color:#fff;font-family:var(--sans);font-size:.9rem;font-weight:600;letter-spacing:.01em}
+.mast .brand .uc{font-family:Georgia,"Times New Roman",serif;color:var(--gold);font-size:1.04rem;font-weight:700;margin-right:7px}
+.mast a{color:#fff;font-family:var(--sans);font-weight:600;font-size:.83rem;text-decoration:none;border-bottom:1.5px solid rgba(255,255,255,.35);border-radius:0}
+.mast a:hover{border-bottom-color:var(--gold);color:#fff;text-decoration:none}
+.mast a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.wrap>header,.page>header{background:var(--berkeley);margin:0 calc(50% - 50vw);padding:30px calc(50vw - 50%) 28px;border-bottom:5px solid var(--gold);margin-bottom:40px}
+.wrap>header .eyebrow,.page>header .eyebrow{display:none}
+.wrap>header h1,.page>header h1{color:#fff;font-weight:800;letter-spacing:-.015em}
+.wrap>header .lede,.wrap>header .promise,.page>header .promise,.page>header .lede{color:rgba(255,255,255,.9)}
+.wrap>header .chip-line,.wrap>header .chip-outline,.page>header .chip-outline,.wrap>header .meta-chip.outline{border-color:rgba(255,255,255,.55);color:#fff;background:transparent}
+.rule,.goldrule,.gold-rule{display:none}
+.rise,.reveal,.fade{opacity:1!important;transform:none!important;animation:none!important}
+h2 .step{color:var(--berkeley)}
+footer{background:var(--berkeley);color:rgba(255,255,255,.85);margin:44px calc(50% - 50vw) 0;padding:20px calc(50vw - 50%) 26px;border-top:0}
+</style>
+<link rel="stylesheet" href="sandbox/sandbox.css">
+</head>
+<body>
+<div class="page">
+
+  <div class="mast"><span class="brand"><span class="uc">UC Berkeley</span>COMPSS 211A · Computing I</span><a href="../index.html">← All interactives</a></div>
+
+  <header>
+    <p class="eyebrow">COMPSS 211A &middot; COMPUTING I</p>
+    <h1>Terminal navigator</h1>
+    <div class="chips">
+      <span class="chip chip-gold">Week 4 &middot; Command line</span>
+      <span class="chip chip-outline">&asymp; 14 minutes</span>
+    </div>
+    <p class="promise">Practice moving around a file system in a simulated terminal. Find out where you are, run a script from the right folder and the wrong one, then create, copy, move, and delete files.</p>
+    <hr class="gold-rule">
+  </header>
+
+  <noscript><div class="card" style="margin-bottom:18px;"><p>This practice page needs JavaScript to simulate the terminal. Enable JavaScript and reload.</p></div></noscript>
+
+  <!-- ============ intro ============ -->
+  <section class="card intro reveal" style="--i:0" aria-labelledby="intro-h">
+    <h2 id="intro-h">The terminal and the shell</h2>
+    <p>The <strong>terminal</strong> is the window where you type commands and see the output. The <strong>shell</strong> is the program inside it that reads each command and runs it. The terminal below is simulated. It runs only on this page, starts inside a small practice project, and cannot reach your real files. You can delete files here with <code>rm</code>, and <code>reset</code> brings them back. Every command has the same three parts:</p>
+    <div class="anatomy" role="img" aria-label="Parts of a command. In the command 'ls -lah data': ls is the command, -lah is an option, and data is an argument.">
+      <div class="apart"><code>ls</code><span>command</span></div>
+      <div class="apart"><code>-lah</code><span>option</span></div>
+      <div class="apart"><code>data</code><span>argument</span></div>
+    </div>
+    <div class="hintchips" aria-label="Terminal tips">
+      <span class="hintchip"><code>Tab</code> completes names</span>
+      <span class="hintchip"><code>&uarr;</code> replays earlier commands</span>
+      <span class="hintchip"><code>help</code> lists every command</span>
+    </div>
+  </section>
+
+  <!-- ============ main layout ============ -->
+  <div class="layout">
+
+    <div class="lay-top">
+
+      <div class="strip reveal" style="--i:1" role="status" id="strip">
+        <span class="strip-badge" id="strip-badge">Current mission 1 of 13</span>
+        <span id="strip-text">Find out where you are: type <code>pwd</code> and press Enter.</span>
+      </div>
+
+      <section class="card term-card reveal" style="--i:2" aria-label="Simulated terminal">
+        <div class="term-head" aria-hidden="true">
+          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+          <span class="term-title">you@laptop: zsh (simulated)</span>
+        </div>
+        <div class="term-body" id="term-body">
+          <div id="term-out" role="log" aria-live="polite" aria-label="Terminal output"></div>
+        </div>
+        <div class="term-input-row" id="term-input-row">
+          <span class="t-prompt" id="prompt-label" aria-hidden="true">you@laptop project %</span>
+          <div class="input-wrap">
+            <label class="sr-only" for="term-in">Terminal input. Type a command and press Enter. Tab completes names. The up and down arrow keys bring back earlier commands.</label>
+            <input id="term-in" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send">
+            <span class="block-cursor idle" id="block-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="term-hints">Tab completes names &middot; &uarr;/&darr; bring back earlier commands &middot; type help for the full list &middot; reset restores the project</div>
+      </section>
+
+      <div class="q-slot" id="q-slot" hidden aria-live="polite"></div>
+
+
+    </div>
+
+    <!-- ============ sidebar ============ -->
+    <aside class="sidebar" aria-label="Reference panel">
+      <div class="sidebar-sticky">
+
+        <section class="card reveal" style="--i:3" aria-labelledby="tree-h">
+          <h2 id="tree-h">File tree</h2>
+          <p class="tree-cwd">working directory: <code id="tree-cwd">/Users/you/project</code></p>
+          <div class="tree" id="tree"></div>
+          <p class="tree-note">The tree updates after each command. The highlighted row is the folder you are in now.</p>
+        </section>
+
+      </div>
+    </aside>
+
+    <!-- ============ missions ============ -->
+    <section class="card missions-card reveal" style="--i:5" aria-labelledby="missions-h">
+      <div class="missions-head">
+        <h2 id="missions-h">Missions</h2>
+        <span class="mcount" id="mcount">0 / 13 complete</span>
+      </div>
+      <ol class="missions" id="missions">
+
+        <li class="mission" id="mission-0">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Find out where you are.</strong> Run <code>pwd</code>.
+            <span class="mq">Question 1: where am I?</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-1">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>List what is here.</strong> Run <code>ls</code>.
+            <span class="mq">Question 2: what is here?</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-2">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Step into <code>data/</code> and confirm the move.</strong> Run <code>cd data</code>, then <code>pwd</code>. The prompt also changes, but check with <code>pwd</code> instead of relying on the prompt.</div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-3">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Look at the start of <code>sample.csv</code> without opening it in an editor.</strong> Run <code>head sample.csv</code>.
+            <span class="mq">Look at a file before you change it.</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-4">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Go back to the project root, the top folder of the project.</strong> Run <code>cd ..</code>. Two dots mean the parent directory, the folder one level up.</div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-5">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Make a folder, step into it, and create an empty file.</strong> Run <code>mkdir scratch</code>, then <code>cd scratch</code>, then <code>touch notes.txt</code>, then <code>ls</code>. The tree shows where you are and the new file.
+            <span class="mq">Question 4: how will I check the result? Run <code>ls</code>.</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-6">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Go back up and copy a file into the new folder.</strong> Run <code>cd ..</code>, then <code>cp notes.md scratch/notes_copy.md</code>, then <code>ls scratch</code>. The original <code>notes.md</code> stays where it was.
+            <span class="mq"><code>cp</code> keeps the original. <code>mv</code>, which you use later, does not.</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-7">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Run the summary script from the project root.</strong> Run <code>python3 scripts/summarize_csv.py</code> and watch <code>summary.txt</code> appear in the tree.
+            <span class="mq">Question 3: what exact path will this command read or change?</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-8">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Run it from the wrong folder.</strong> Run <code>cd scripts</code>, then <code>python3 summarize_csv.py</code>. Read the error, then answer below.</div>
+          <span class="sr-only mstat"></span>
+
+          <div class="qcard locked" id="qcard-1">
+            <p class="qlock">This question unlocks after you hit the error in mission 9.</p>
+            <div class="qbody">
+              <fieldset disabled id="q1-fs">
+                <legend>Predict, then check: the same script worked from <code>project/</code> a moment ago. Why did it fail from <code>scripts/</code>?</legend>
+                <label class="qopt"><input type="radio" name="q1" value="a"><span>Python can only run a script from inside the folder that contains it.</span></label>
+                <label class="qopt"><input type="radio" name="q1" value="b"><span>The script opens the relative path <code>data/sample.csv</code>, and a relative path starts from the current working directory. From <code>scripts/</code> that means <code>scripts/data/sample.csv</code>, which does not exist.</span></label>
+                <label class="qopt"><input type="radio" name="q1" value="c"><span>Changing into <code>scripts/</code> moved the <code>data/</code> folder, so the file is gone.</span></label>
+                <button type="button" class="qcheck" id="q1-check">Check my prediction</button>
+                <p class="qfeedback" id="q1-feedback" aria-live="polite"></p>
+              </fieldset>
+              <div class="explainer" id="explainer-1" hidden>
+                <h3>Why the script failed from scripts/</h3>
+                <p>Python found and ran the script both times, because you gave a correct path to the script itself. The failure happened <em>inside</em> the script, at <code>open("data/sample.csv")</code>. A relative path starts from your current working directory, not from the folder that contains the script.</p>
+                <div class="pathmap" role="img" aria-label="From /Users/you/project, the relative path data/sample.csv resolves to /Users/you/project/data/sample.csv, which exists. From /Users/you/project/scripts, the same relative path resolves to /Users/you/project/scripts/data/sample.csv, which does not exist.">
+<div><span class="pm-dim">from</span> ~/project          <span class="pm-dim">data/sample.csv &rarr;</span> <span class="pm-ok">~/project/data/sample.csv          exists</span></div>
+<div><span class="pm-dim">from</span> ~/project/scripts  <span class="pm-dim">data/sample.csv &rarr;</span> <span class="pm-err">~/project/scripts/data/sample.csv  missing</span></div>
+                </div>
+                <p><strong>Run project scripts from the project root.</strong> When you get a path error, first run <code>pwd</code>, then read the missing path in the error. Only then change the code. Try <code>cd ..</code> and run the script again.</p>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <li class="mission" id="mission-9">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Move the summary into <code>results/</code>.</strong> From the root, run <code>mv summary.txt results/</code>, then <code>ls results</code>. Keep the <code>/</code> at the end. It tells <code>mv</code> that the destination must be a folder that already exists.
+            <span class="mq">Question 4: how will I check the result? Run <code>ls results</code>.</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+        <li class="mission" id="mission-10">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Mistype the folder name.</strong> What does <code>mv</code> do when the destination folder is spelled wrong? Type <code>python3 scripts/summarize_csv.py</code> to create a new <code>summary.txt</code>, then <code>mv summary.txt result</code>, leaving out the <code>s</code>. Look at the tree, then answer below.</div>
+          <span class="sr-only mstat"></span>
+
+          <div class="qcard locked" id="qcard-2">
+            <p class="qlock">This question unlocks after the mistyped <code>mv</code> in mission 11.</p>
+            <div class="qbody">
+              <fieldset disabled id="q2-fs">
+                <legend><code>mv</code> printed nothing, and <code>summary.txt</code> is no longer in the tree. Where did it go?</legend>
+                <label class="qopt"><input type="radio" name="q2" value="a"><span>It was deleted: <code>result</code> is not a folder, so <code>mv</code> had nowhere to put it.</span></label>
+                <label class="qopt"><input type="radio" name="q2" value="b"><span>It was renamed. Nothing called <code>result</code> existed, so <code>mv</code> used the second argument as a new file name in the current directory.</span></label>
+                <label class="qopt"><input type="radio" name="q2" value="c"><span>It moved into <code>results/</code>: <code>mv</code> matched the closest existing folder name.</span></label>
+                <button type="button" class="qcheck" id="q2-check">Check my answer</button>
+                <p class="qfeedback" id="q2-feedback" aria-live="polite"></p>
+              </fieldset>
+              <div class="explainer" id="explainer-2" hidden>
+                <h3>What mv does with its second argument</h3>
+                <p><code>mv</code> looks at its second argument. If that path is an existing folder, the file moves inside it. If it is anything else, the file is renamed to that path. It never asks which one you meant, and it prints nothing when it succeeds.</p>
+                <div class="pathmap" role="img" aria-label="mv summary.txt results/ : results/ is an existing folder, so the file moves to results/summary.txt. mv summary.txt result : nothing named result exists, so the file is renamed to result. mv summary.txt result/ : nothing named result exists, so mv refuses with No such file or directory.">
+<div><span class="pm-dim">mv summary.txt</span> results/  <span class="pm-dim">results/ is an existing folder &rarr;</span> <span class="pm-ok">moved to results/summary.txt</span></div>
+<div><span class="pm-dim">mv summary.txt</span> result   <span class="pm-dim">nothing named result exists   &rarr;</span> <span class="pm-err">renamed to result</span></div>
+<div><span class="pm-dim">mv summary.txt</span> result/  <span class="pm-dim">nothing named result exists   &rarr;</span> <span class="pm-ok">refused: No such file or directory</span></div>
+                </div>
+                <p><strong>End a destination folder with <code>/</code>.</strong> Then a typo in the folder name gives an error instead of renaming your file. Also, if the destination is a file that already exists, <code>mv</code> and <code>cp</code> replace it without asking, and the old contents are gone. You can fix a misnamed file with another <code>mv</code>, but leave <code>result</code> where it is. The next mission removes it.</p>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <li class="mission" id="mission-11">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Delete the stray file.</strong> Run <code>pwd</code>, then <code>ls -l result</code> to see the exact file you are about to remove, then <code>rm result</code>. Then answer below.
+            <span class="mq">Check the exact path first, then remove that same path.</span>
+          </div>
+          <span class="sr-only mstat"></span>
+
+          <div class="qcard locked" id="qcard-3">
+            <p class="qlock">This question unlocks after <code>rm</code> removes a file in mission 12.</p>
+            <div class="qbody">
+              <fieldset disabled id="q3-fs">
+                <legend><code>rm result</code> printed nothing. Where is the file now?</legend>
+                <label class="qopt"><input type="radio" name="q3" value="a"><span>In the Trash, the same as deleting it in Finder or Explorer.</span></label>
+                <label class="qopt"><input type="radio" name="q3" value="b"><span>Gone. <code>rm</code> does not use the Trash and prints nothing when it succeeds. The only way back is a copy made earlier.</span></label>
+                <label class="qopt"><input type="radio" name="q3" value="c"><span>Hidden. <code>rm</code> marks the file as hidden, and <code>ls -a</code> still shows it.</span></label>
+                <button type="button" class="qcheck" id="q3-check">Check my answer</button>
+                <p class="qfeedback" id="q3-feedback" aria-live="polite"></p>
+              </fieldset>
+              <div class="explainer" id="explainer-3" hidden>
+                <h3>Why to check before rm</h3>
+                <p><code>rm</code> prints nothing when it succeeds. There is no Trash, no confirmation, and no undo. <code>rm</code> removes whatever path you give it, starting from the working directory. So work in this order: <code>pwd</code> to see where you are, <code>ls</code> on the exact path to see what will be removed, then <code>rm</code> on that same path. Do not <code>rm</code> a path you have not just listed.</p>
+                <p>Two options make it more dangerous. <code>-r</code> removes a folder and everything inside it. <code>-f</code> hides the errors that would otherwise stop it. <code>rm -rf</code> with the wrong path can delete a whole project.</p>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <li class="mission" id="mission-12">
+          <span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><circle class="ring" cx="12" cy="12" r="10"/><path class="tick" d="M7.5 12.6l3 3L16.6 9.4"/></svg></span>
+          <div class="mtext"><strong>Remove a whole folder, then bring the project back.</strong> Run <code>rm results</code> and read the error. Then run <code>rm -r results</code> and watch the folder and everything in it disappear from the tree. Finally, type <code>reset</code>.
+            <span class="mq">This practice terminal has <code>reset</code>. Your computer does not.</span>
+          </div>
+          <span class="sr-only mstat"></span>
+        </li>
+
+      </ol>
+    </section>
+
+  </div><!-- /layout -->
+
+  <!-- ============ recap ============ -->
+  <section class="card recap reveal" style="--i:6" aria-labelledby="recap-h">
+    <h2 id="recap-h">Remember</h2>
+    <ul>
+      <li><strong><code>pwd</code>, <code>ls</code>, and <code>cd</code> answer three questions:</strong> where am I, what is here, how do I get there.</li>
+      <li><strong>A relative path starts from the working directory;</strong> an absolute path starts from the file-system root.</li>
+      <li><strong><code>..</code> is the parent directory and <code>~</code> is your home directory.</strong> <code>cd -</code> returns to the previous one.</li>
+      <li><strong>Tab completion helps you avoid typos.</strong> Use it often.</li>
+      <li><strong>Run project scripts from the project root,</strong> so the relative paths inside them point to the right files.</li>
+      <li><strong><code>mkdir</code>, <code>touch</code>, and <code>cp</code> create; <code>mv</code> moves.</strong> Run <code>ls</code> on the destination afterwards to check. <code>mkdir -p</code> also creates missing parent folders and gives no error if the folder already exists.</li>
+      <li><strong>End a destination folder with <code>/</code>.</strong> If the folder does not exist, <code>mv</code> refuses instead of renaming your file.</li>
+      <li><strong><code>mv</code> and <code>cp</code> replace an existing destination file without asking.</strong> Check the destination with <code>ls</code> first.</li>
+      <li><strong><code>rm</code> does not use the Trash.</strong> First <code>pwd</code>, then <code>ls</code> on the exact path, then <code>rm</code> on that path. <code>-r</code> takes a whole folder.</li>
+      <li><strong>This practice terminal has <code>reset</code>. Your computer does not.</strong> On your own computer, practice on a copy you don't mind losing, and delete files through the Trash in Finder or Explorer.</li>
+    </ul>
+  </section>
+
+  <!-- ============ real terminal ============ -->
+  <section class="card" aria-labelledby="real-h" style="margin-top:28px">
+    <h2 id="real-h">Now try a real terminal</h2>
+    <p>The terminal above is simulated. This one has real files and runs real Python inside your browser. It holds a small copy of Monday's project: <code>case_summary.py</code>, <code>run_report.py</code>, and 400 of the 16,876 San Francisco 311 requests. Nothing here can reach the files on your computer, and <code>reset</code> puts everything back.</p>
+    <p><strong>Try this, in order:</strong></p>
+    <ol>
+      <li>Find your way around: <code>pwd</code>, <code>ls</code>, <code>ls data</code>, <code>head -n 3 data/sf311_requests.csv</code>.</li>
+      <li>Run the report: <code>python run_report.py</code>. Then check the saved file: <code>ls outputs</code> and <code>cat outputs/request_summary.csv</code>.</li>
+      <li>Make the same mistake as in class: <code>cd data</code>, then <code>python ../run_report.py</code>. Read the error. Which folder was Python looking in?</li>
+      <li>Go back with <code>cd ..</code>. Make the manager's change: <code>edit run_report.py</code>, change <code>group_by="channel"</code> to <code>group_by="district"</code>, press <strong>Save</strong>, and run the report again. Did the saved CSV change too?</li>
+    </ol>
+    <p class="small" style="font-size:.88rem">The first command loads Python into your browser (about 25 MB with pandas, only once), so it takes a few seconds. This part needs an internet connection.</p>
+    <div id="real-terminal"></div>
+  </section>
+
+  <footer>
+    COMPSS 211A &middot; UC Berkeley &middot; CC BY 4.0 &middot; Runs in your browser. Nothing you do here is recorded.
+  </footer>
+
+</div><!-- /page -->
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   Virtual file system
+   ============================================================ */
+var SAMPLE_CSV = [
+  'id,category,minutes',
+  '1,walk,12',
+  '2,bus,34',
+  '3,bike,21',
+  '4,bus,41',
+  '5,walk,15',
+  '6,train,52'
+].join('\n');
+
+var SURVEY_CSV = [
+  'respondent,mode,satisfaction',
+  'r1,bus,3',
+  'r2,bike,5',
+  'r3,walk,4',
+  'r4,train,4'
+].join('\n');
+
+var NOTES_MD = [
+  '# Project notes',
+  '',
+  'Week 4 practice project. Use it to practice moving around',
+  'before opening a real terminal. Nothing in this folder',
+  'is connected to your real computer.'
+].join('\n');
+
+var SCRIPT_PY = [
+  '"""Summarize a commute CSV.',
+  '',
+  'The input path is read RELATIVE to your current working',
+  'directory -- not relative to the folder holding this file.',
+  '"""',
+  'import sys',
+  '',
+  'path = sys.argv[1] if len(sys.argv) > 1 else "data/sample.csv"',
+  'rows = open(path).read().splitlines()',
+  'minutes = [int(r.split(",")[2]) for r in rows[1:]]',
+  '',
+  'print(f"Read {path}: {len(minutes)} rows, {len(rows[0].split(chr(44)))} columns.")',
+  'print(f"Total minutes: {sum(minutes)}; mean per trip: {sum(minutes)/len(minutes):.1f}.")',
+  '',
+  'with open("summary.txt", "w") as out:',
+  '    out.write(f"source: {path}\\n")',
+  '    out.write(f"rows: {len(minutes)}\\n")',
+  '    out.write(f"total_minutes: {sum(minutes)}\\n")',
+  '    out.write(f"mean_minutes: {sum(minutes)/len(minutes):.1f}\\n")',
+  'print("Wrote summary.txt in the current working directory.")'
+].join('\n');
+
+function mkFile(content){ return { type:'file', content:content }; }
+function mkDir(children){ return { type:'dir', children:children || {} }; }
+
+function buildFS(){
+  return mkDir({
+    'Users': mkDir({
+      'you': mkDir({
+        'project': mkDir({
+          'data': mkDir({
+            'sample.csv': mkFile(SAMPLE_CSV),
+            'survey_2025.csv': mkFile(SURVEY_CSV)
+          }),
+          'scripts': mkDir({
+            'summarize_csv.py': mkFile(SCRIPT_PY)
+          }),
+          'notes.md': mkFile(NOTES_MD),
+          'results': mkDir({}),
+          '.venv': mkDir({})
+        })
+      })
+    })
+  });
+}
+var FS = buildFS();
+
+var HOME = ['Users','you'];
+var PROJ = ['Users','you','project'];
+var PROJ_KEY = PROJ.join('/');
+var DATA_KEY = PROJ_KEY + '/data';
+var SCRIPTS_KEY = PROJ_KEY + '/scripts';
+var RESULTS_KEY = PROJ_KEY + '/results';
+
+var cwd = PROJ.slice();
+var prevDir = null;              /* for cd -            */
+var LS_DATE = 'Aug 22 09:14';    /* static mtime column */
+
+function key(segs){ return segs.join('/'); }
+function fmtAbs(segs){ return segs.length ? '/' + segs.join('/') : '/'; }
+function abbrevHome(segs){
+  var k = key(segs);
+  var hk = key(HOME);
+  if (k === hk) return '~';
+  if (k.indexOf(hk + '/') === 0) return '~/' + segs.slice(HOME.length).join('/');
+  return fmtAbs(segs);
+}
+
+/* Resolve a typed path (relative, absolute, ~, .., .) into segments. */
+function resolvePath(str){
+  var start;
+  if (str === '~' || str.indexOf('~/') === 0){
+    start = HOME.slice();
+    str = str.slice(1);
+  } else if (str.charAt(0) === '/'){
+    start = [];
+  } else {
+    start = cwd.slice();
+  }
+  var parts = str.split('/');
+  for (var i = 0; i < parts.length; i++){
+    var p = parts[i];
+    if (p === '' || p === '.') continue;
+    if (p === '..'){ start.pop(); }
+    else { start.push(p); }
+  }
+  return start;
+}
+
+function getNode(segs){
+  var node = FS;
+  for (var i = 0; i < segs.length; i++){
+    if (node.type !== 'dir') return null;
+    node = node.children[segs[i]];
+    if (!node) return null;
+  }
+  return node;
+}
+
+function nodeAt(pathStr){ return getNode(resolvePath(pathStr)); }
+
+function countFilesDeep(dir){
+  var n = 0;
+  var names = Object.keys(dir.children);
+  for (var i = 0; i < names.length; i++){
+    if (names[i].charAt(0) === '.') continue;
+    var c = dir.children[names[i]];
+    if (c.type === 'file') n++;
+    else n += countFilesDeep(c);
+  }
+  return n;
+}
+
+/* ============================================================
+   Terminal output
+   ============================================================ */
+var termBody = document.getElementById('term-body');
+var termOut = document.getElementById('term-out');
+var input = document.getElementById('term-in');
+var promptLabel = document.getElementById('prompt-label');
+var blockCursor = document.getElementById('block-cursor');
+
+function promptFolder(){
+  if (key(cwd) === key(HOME)) return '~';
+  if (cwd.length === 0) return '/';
+  return cwd[cwd.length - 1];
+}
+function promptText(){ return 'you@laptop ' + promptFolder() + ' %'; }
+
+/* addLine accepts a string (one class for the whole line)
+   or an array of {text, cls} spans. */
+function addLine(content, cls){
+  var div = document.createElement('div');
+  div.className = 't-line' + (cls ? ' ' + cls : '');
+  if (typeof content === 'string'){
+    div.textContent = content;
+  } else {
+    for (var i = 0; i < content.length; i++){
+      var sp = document.createElement('span');
+      if (content[i].cls) sp.className = content[i].cls;
+      sp.textContent = content[i].text;
+      div.appendChild(sp);
+    }
+  }
+  termOut.appendChild(div);
+}
+function out(text){ addLine(text, 't-out'); }
+function outErr(text){ addLine(text, 't-err'); }
+function outNote(text){ addLine(text, 't-note'); }
+function outOk(text){ addLine(text, 't-ok'); }
+function echoCommand(raw){
+  addLine([{text: promptText() + ' ', cls:'t-prompt'}, {text: raw, cls:'t-cmd'}]);
+}
+function scrollTerm(){ termBody.scrollTop = termBody.scrollHeight; }
+
+/* ============================================================
+   Command implementations
+   Each handler prints output and may add to EVENTS.
+   ============================================================ */
+var EVENTS = new Set();
+function emit(e){ EVENTS.add(e); }
+
+function splitFlags(argv){
+  /* returns {flags:Set of letters, operands:[], bad:letter|null} */
+  var flags = new Set(), operands = [], bad = null;
+  for (var i = 1; i < argv.length; i++){
+    var t = argv[i];
+    if (t.length > 1 && t.charAt(0) === '-' && !/^-?\d+$/.test(t)){
+      for (var j = 1; j < t.length; j++){
+        flags.add(t.charAt(j));
+      }
+    } else {
+      operands.push(t);
+    }
+  }
+  return { flags:flags, operands:operands, bad:bad };
+}
+
+function cmdPwd(){
+  out(fmtAbs(cwd));
+  emit('pwd');
+}
+
+function cmdWhoami(){
+  out(HOME[HOME.length - 1]);
+}
+
+function cmdCd(argv){
+  if (argv.length > 2){ outErr('cd: too many arguments'); return; }
+  var target = argv[1];
+  var segs, echoAfter = false;
+  if (target === undefined || target === '~'){
+    segs = HOME.slice();
+  } else if (target === '-'){
+    if (!prevDir){ outErr('cd: no previous directory'); return; }
+    segs = prevDir.slice();
+    echoAfter = true;
+  } else {
+    segs = resolvePath(target);
+  }
+  var node = getNode(segs);
+  if (!node){ outErr('cd: no such file or directory: ' + (target === undefined ? '~' : target)); return; }
+  if (node.type !== 'dir'){ outErr('cd: not a directory: ' + target); return; }
+  prevDir = cwd.slice();
+  cwd = segs;
+  if (echoAfter) out(abbrevHome(cwd));
+  emit('cd-ok');
+}
+
+function lsEntryNames(dirNode, showAll){
+  var names = Object.keys(dirNode.children).filter(function(n){
+    return showAll || n.charAt(0) !== '.';
+  });
+  names.sort();
+  if (showAll) names = ['.', '..'].concat(names);
+  return names;
+}
+
+function lsLong(dirNode, names, human){
+  var fileCount = 0;
+  names.forEach(function(n){
+    var node = (n === '.' || n === '..') ? {type:'dir', children:{}} : dirNode.children[n];
+    if (node.type === 'file') fileCount++;
+  });
+  out('total ' + (fileCount * 8));
+  names.forEach(function(n){
+    var node = (n === '.' || n === '..') ? null : dirNode.children[n];
+    var isDir = !node || node.type === 'dir';
+    var perms = isDir ? 'drwxr-xr-x' : '-rw-r--r--';
+    var links = isDir ? (node ? Object.keys(node.children).length + 2 : 2) : 1;
+    var size = isDir ? 128 : node.content.length;
+    var sizeStr = human ? (size >= 1024 ? (size/1024).toFixed(1) + 'K' : size + 'B') : String(size);
+    var line = perms + '  ' + String(links).padStart(2) + ' you  staff  ' +
+               sizeStr.padStart(5) + ' ' + LS_DATE + ' ';
+    addLine([{text: line, cls:'t-out'}, {text: n, cls: isDir ? 't-dir' : 't-out'}]);
+  });
+}
+
+function cmdLs(argv){
+  var parsed = splitFlags(argv);
+  var flags = parsed.flags, operands = parsed.operands;
+  var known = ['l','a','h'];
+  var illegal = null;
+  flags.forEach(function(f){ if (known.indexOf(f) === -1 && !illegal) illegal = f; });
+  if (illegal){
+    outErr('ls: illegal option -- ' + illegal);
+    outErr('usage: ls [-lah] [file ...]');
+    return;
+  }
+  var showAll = flags.has('a');
+  var longFmt = flags.has('l');
+  var human = flags.has('h');
+  var targets = operands.length ? operands : [''];
+  var multiple = operands.length > 1;
+  LS_SEEN = [];
+  var anyOk = false;
+
+  targets.forEach(function(t, idx){
+    var segs = t === '' ? cwd.slice() : resolvePath(t);
+    var node = getNode(segs);
+    if (node && node.type === 'dir') LS_SEEN.push(key(segs));
+    if (!node){ outErr('ls: ' + t + ': No such file or directory'); return; }
+    anyOk = true;
+    if (multiple && idx > 0) out('');
+    if (node.type === 'file'){
+      var shown = t === '' ? segs[segs.length-1] : t;
+      if (longFmt){
+        var fsize = node.content.length;
+        var fsizeStr = human ? (fsize >= 1024 ? (fsize/1024).toFixed(1) + 'K' : fsize + 'B') : String(fsize);
+        out('-rw-r--r--   1 you  staff  ' + fsizeStr.padStart(5) + ' ' + LS_DATE + ' ' + shown);
+      } else {
+        out(shown);
+      }
+      return;
+    }
+    if (multiple) out(t + ':');
+    var names = lsEntryNames(node, showAll);
+    if (longFmt){
+      lsLong(node, names, human);
+    } else if (names.length){
+      var spans = [];
+      names.forEach(function(n, i){
+        var child = (n === '.' || n === '..') ? null : node.children[n];
+        var isDir = !child || child.type === 'dir';
+        if (i > 0) spans.push({text:'  ', cls:'t-out'});
+        spans.push({text:n, cls: isDir ? 't-dir' : 't-out'});
+      });
+      addLine(spans);
+    }
+    if (showAll && key(segs) === PROJ_KEY) emit('ls-a-root');
+  });
+  if (anyOk) emit('ls-ok');
+}
+
+function readFileLines(t, cmdName){
+  var segs = resolvePath(t);
+  var node = getNode(segs);
+  if (!node){ outErr(cmdName + ': ' + t + ': No such file or directory'); return null; }
+  if (node.type !== 'file'){ outErr(cmdName + ': ' + t + ': Is a directory'); return null; }
+  if (key(segs) === DATA_KEY + '/sample.csv') emit('viewed-sample');
+  return node.content.split('\n');
+}
+
+function cmdCat(argv){
+  if (argv.length < 2){
+    outNote('cat: this practice terminal cannot read from the keyboard. Give it a file path, like cat notes.md');
+    return;
+  }
+  for (var i = 1; i < argv.length; i++){
+    var lines = readFileLines(argv[i], 'cat');
+    if (lines) lines.forEach(function(l){ out(l); });
+  }
+}
+
+/* grep and wc read files without counting as a mission step. */
+function readFileQuiet(t, cmdName){
+  var node = getNode(resolvePath(t));
+  if (!node){ outErr(cmdName + ': ' + t + ': No such file or directory'); return null; }
+  if (node.type !== 'file'){ outErr(cmdName + ': ' + t + ': Is a directory'); return null; }
+  return node.content;
+}
+
+function cmdGrep(argv){
+  var parsed = splitFlags(argv);
+  if (parsed.operands.length < 2){ outErr('usage: grep [-i] [-c] [-n] pattern file ...'); return; }
+  var pattern = parsed.operands[0], files = parsed.operands.slice(1);
+  var ignoreCase = parsed.flags.has('i'), countOnly = parsed.flags.has('c'), numbers = parsed.flags.has('n');
+  var needle = ignoreCase ? pattern.toLowerCase() : pattern;
+  files.forEach(function(t){
+    var text = readFileQuiet(t, 'grep');
+    if (text === null) return;
+    var lines = text.replace(/\n$/, '').split('\n');
+    var prefix = files.length > 1 ? t + ':' : '';
+    var hits = 0;
+    lines.forEach(function(line, i){
+      var hay = ignoreCase ? line.toLowerCase() : line;
+      if (hay.indexOf(needle) >= 0){
+        hits++;
+        if (!countOnly) out(prefix + (numbers ? (i + 1) + ':' : '') + line);
+      }
+    });
+    if (countOnly) out(prefix + hits);
+  });
+}
+
+function cmdWc(argv){
+  var parsed = splitFlags(argv);
+  if (!parsed.operands.length){ outNote('wc: give it a file path, like wc -l data/sample.csv'); return; }
+  var linesOnly = parsed.flags.has('l');
+  parsed.operands.forEach(function(t){
+    var text = readFileQuiet(t, 'wc');
+    if (text === null) return;
+    var newlines = (text.match(/\n/g) || []).length;
+    var words = text.split(/\s+/).filter(Boolean).length;
+    var bytes = new Blob([text]).size;
+    var pad = function(n){ return String(n).padStart(8); };
+    out(linesOnly ? pad(newlines) + ' ' + t : pad(newlines) + pad(words) + pad(bytes) + ' ' + t);
+  });
+}
+
+function parseHeadTail(argv, cmdName){
+  var n = 3, files = [];
+  for (var i = 1; i < argv.length; i++){
+    var t = argv[i];
+    if (t === '-n'){
+      var v = parseInt(argv[i+1], 10);
+      if (isNaN(v)){ outErr(cmdName + ': illegal line count -- ' + (argv[i+1] || '')); return null; }
+      n = v; i++;
+    } else if (/^-n\d+$/.test(t)){ n = parseInt(t.slice(2), 10); }
+    else if (/^-\d+$/.test(t)){ n = parseInt(t.slice(1), 10); }
+    else if (t.charAt(0) === '-'){ outErr(cmdName + ': illegal option -- ' + t.slice(1)); return null; }
+    else files.push(t);
+  }
+  if (!files.length){
+    outNote(cmdName + ': give it a file path, like ' + cmdName + ' data/sample.csv');
+    return null;
+  }
+  return { n:n, files:files };
+}
+
+function cmdHead(argv){
+  var p = parseHeadTail(argv, 'head');
+  if (!p) return;
+  p.files.forEach(function(f){
+    var lines = readFileLines(f, 'head');
+    if (lines) lines.slice(0, p.n).forEach(function(l){ out(l); });
+  });
+}
+
+function cmdTail(argv){
+  var p = parseHeadTail(argv, 'tail');
+  if (!p) return;
+  p.files.forEach(function(f){
+    var lines = readFileLines(f, 'tail');
+    if (lines) lines.slice(Math.max(0, lines.length - p.n)).forEach(function(l){ out(l); });
+  });
+}
+
+function cmdMkdir(argv){
+  var parsed = splitFlags(argv);
+  var pFlag = parsed.flags.has('p');
+  if (!parsed.operands.length){ outErr('usage: mkdir [-p] directory_name'); return; }
+  parsed.operands.forEach(function(t){
+    var segs = resolvePath(t);
+    var node = getNode(segs);
+    if (node){
+      if (!pFlag) outErr('mkdir: ' + t + ': File exists');
+      return;
+    }
+    var parent = getNode(segs.slice(0, -1));
+    if (!parent || parent.type !== 'dir'){
+      if (pFlag){
+        /* create parents */
+        var walk = FS;
+        for (var i = 0; i < segs.length; i++){
+          if (!walk.children[segs[i]]) walk.children[segs[i]] = mkDir({});
+          walk = walk.children[segs[i]];
+          if (walk.type !== 'dir'){ outErr('mkdir: ' + t + ': Not a directory'); return; }
+        }
+        return;
+      }
+      outErr('mkdir: ' + t + ': No such file or directory');
+      return;
+    }
+    parent.children[segs[segs.length - 1]] = mkDir({});
+  });
+}
+
+function cmdMv(argv){
+  if (argv.length !== 3){ outErr('usage: mv source target'); return; }
+  var src = argv[1], dst = argv[2];
+  var srcSegs = resolvePath(src);
+  var srcNode = getNode(srcSegs);
+  if (!srcNode){ outErr('mv: rename ' + src + ' to ' + dst + ': No such file or directory'); return; }
+  if (srcSegs.length === 0){ outErr('mv: cannot move the file-system root'); return; }
+  /* refuse to move the directory you are standing in (or an ancestor of it) */
+  var sk = key(srcSegs), ck = key(cwd);
+  if (srcNode.type === 'dir' && (ck === sk || ck.indexOf(sk + '/') === 0)){
+    outErr('mv: cannot move ' + src + ': you are currently standing inside it (cd out first)');
+    return;
+  }
+  var dstSegs = resolvePath(dst);
+  var dstNode = getNode(dstSegs);
+  var dstWantsDir = dst.length > 1 && dst.charAt(dst.length - 1) === '/';
+  if (dstWantsDir && (!dstNode || dstNode.type !== 'dir')){
+    /* a trailing slash means "this must be a folder": real mv refuses too */
+    outErr('mv: rename ' + src + ' to ' + dst + ': No such file or directory');
+    return;
+  }
+  var finalSegs;
+  if (dstNode && dstNode.type === 'dir'){
+    finalSegs = dstSegs.concat([srcSegs[srcSegs.length - 1]]);
+  } else {
+    finalSegs = dstSegs;
+  }
+  if (key(finalSegs) === sk) return; /* moving onto itself: no-op */
+  if (srcNode.type === 'dir' && key(finalSegs).indexOf(sk + '/') === 0){
+    outErr('mv: rename ' + src + ' to ' + dst + ': Invalid argument');
+    return;
+  }
+  var finalParent = getNode(finalSegs.slice(0, -1));
+  if (!finalParent || finalParent.type !== 'dir'){
+    outErr('mv: rename ' + src + ' to ' + dst + ': No such file or directory');
+    return;
+  }
+  var existing = finalParent.children[finalSegs[finalSegs.length - 1]];
+  if (existing && existing.type === 'dir'){
+    outErr('mv: rename ' + src + ' to ' + dst + ': Directory not empty');
+    return;
+  }
+  var srcParent = getNode(srcSegs.slice(0, -1));
+  delete srcParent.children[srcSegs[srcSegs.length - 1]];
+  finalParent.children[finalSegs[finalSegs.length - 1]] = srcNode;
+  /* real mv is silent on success, even when it just replaced a file */
+  MV_LAST = { from: sk, to: key(finalSegs), renamed: !dstNode };
+  emit('mv-ok');
+  emit('fs-changed');
+}
+var MV_LAST = null;
+var LS_SEEN = [];   /* directories listed by the most recent ls */
+
+function cmdCp(argv){
+  if (argv.length !== 3){ outErr('usage: cp source target'); return; }
+  var src = argv[1], dst = argv[2];
+  var srcNode = nodeAt(src);
+  if (!srcNode){ outErr('cp: ' + src + ': No such file or directory'); return; }
+  if (srcNode.type === 'dir'){ outErr('cp: ' + src + ' is a directory (not copied).'); return; }
+  var dstSegs = resolvePath(dst);
+  var dstNode = getNode(dstSegs);
+  var dstWantsDir = dst.length > 1 && dst.charAt(dst.length - 1) === '/';
+  if (dstWantsDir && (!dstNode || dstNode.type !== 'dir')){
+    outErr('cp: directory ' + dst.replace(/\/+$/, '') + ' does not exist');
+    return;
+  }
+  var finalSegs;
+  if (dstNode && dstNode.type === 'dir'){
+    finalSegs = dstSegs.concat([resolvePath(src).pop()]);
+  } else {
+    finalSegs = dstSegs;
+  }
+  var parent = getNode(finalSegs.slice(0, -1));
+  if (!parent || parent.type !== 'dir'){ outErr('cp: ' + dst + ': No such file or directory'); return; }
+  var existing = parent.children[finalSegs[finalSegs.length - 1]];
+  if (existing && existing.type === 'dir'){ outErr('cp: ' + dst + ': Is a directory'); return; }
+  parent.children[finalSegs[finalSegs.length - 1]] = mkFile(srcNode.content);
+  emit('fs-changed');
+}
+
+function cmdTouch(argv){
+  if (argv.length < 2){ outErr('usage: touch file_name'); return; }
+  for (var i = 1; i < argv.length; i++){
+    var t = argv[i];
+    var segs = resolvePath(t);
+    if (getNode(segs)) continue; /* updates the timestamp; nothing visible here */
+    var parent = getNode(segs.slice(0, -1));
+    if (!parent || parent.type !== 'dir'){ outErr('touch: ' + t + ': No such file or directory'); continue; }
+    parent.children[segs[segs.length - 1]] = mkFile('');
+    emit('fs-changed');
+  }
+}
+
+/* ---------- python3 (simulated) ---------- */
+function cmdPython(argv, rawTarget){
+  if (argv.length < 2){
+    outNote('This practice terminal can only run scripts. It cannot open an interactive Python prompt.');
+    outNote('Try: python3 scripts/summarize_csv.py');
+    return;
+  }
+  var target = argv[1];
+  var segs = resolvePath(target);
+  var node = getNode(segs);
+  if (!node || node.type !== 'file'){
+    outErr('python3: can\'t open file \'' + fmtAbs(segs) + '\': [Errno 2] No such file or directory');
+    return;
+  }
+  if (node.content !== SCRIPT_PY){
+    outNote('sandbox: the only script this practice terminal can run is scripts/summarize_csv.py.');
+    return;
+  }
+  var dataPathTyped = argv.length > 2 ? argv[2] : 'data/sample.csv';
+  var dataSegs = resolvePath(dataPathTyped);
+  var dataNode = getNode(dataSegs);
+  if (!dataNode || dataNode.type !== 'file'){
+    out('Traceback (most recent call last):');
+    out('  File "' + target + '", line 9, in <module>');
+    out('    rows = open(path).read().splitlines()');
+    outErr('FileNotFoundError: [Errno 2] No such file or directory: \'' + dataPathTyped + '\'');
+    emit('script-fail');
+    return;
+  }
+  var rows = dataNode.content.split('\n');
+  var records = rows.slice(1).filter(function(r){ return r.trim() !== ''; });
+  if (!records.length){
+    out('Traceback (most recent call last):');
+    out('  File "' + target + '", line 13, in <module>');
+    outErr('ZeroDivisionError: division by zero');
+    return;
+  }
+  var vals = [];
+  for (var i = 0; i < records.length; i++){
+    var fields = records[i].split(',');
+    if (fields.length < 3){
+      out('Traceback (most recent call last):');
+      out('  File "' + target + '", line 10, in <module>');
+      out('    minutes = [int(r.split(",")[2]) for r in rows[1:]]');
+      outErr('IndexError: list index out of range');
+      return;
+    }
+    var v = parseInt(fields[2], 10);
+    if (isNaN(v) || !/^\s*-?\d+\s*$/.test(fields[2])){
+      out('Traceback (most recent call last):');
+      out('  File "' + target + '", line 10, in <module>');
+      out('    minutes = [int(r.split(",")[2]) for r in rows[1:]]');
+      outErr('ValueError: invalid literal for int() with base 10: \'' + fields[2] + '\'');
+      return;
+    }
+    vals.push(v);
+  }
+  var total = vals.reduce(function(a,b){ return a + b; }, 0);
+  var mean = (total / vals.length).toFixed(1);
+  var cols = rows[0].split(',').length;
+  out('Read ' + dataPathTyped + ': ' + vals.length + ' rows, ' + cols + ' columns.');
+  out('Total minutes: ' + total + '; mean per trip: ' + mean + '.');
+  out('Wrote summary.txt in the current working directory.');
+  var cwdNode = getNode(cwd);
+  cwdNode.children['summary.txt'] = mkFile(
+    'source: ' + dataPathTyped + '\nrows: ' + vals.length +
+    '\ntotal_minutes: ' + total + '\nmean_minutes: ' + mean
+  );
+  emit('script-ok');
+  emit('fs-changed');
+}
+
+/* ---------- utility commands ---------- */
+var historyList = [];
+
+function cmdHistory(){
+  historyList.forEach(function(h, i){
+    out(String(i + 1).padStart(5) + '  ' + h);
+  });
+}
+
+function cmdEcho(argv){
+  out(argv.slice(1).join(' '));
+}
+
+function cmdClear(){
+  termOut.textContent = '';
+}
+
+function cmdHelp(){
+  var rows = [
+    ['pwd',                 'print the working directory'],
+    ['whoami',              'print your username'],
+    ['ls [-lah] [path]',    'list a directory (-a also shows hidden files)'],
+    ['cd [path]',           'change directory: a path, .., ~, or - for the previous one'],
+    ['cat <file>',          'print a whole file'],
+    ['head [-n N] <file>',  'first lines of a file (default 3)'],
+    ['tail [-n N] <file>',  'last lines of a file (default 3)'],
+    ['wc -l <file>',        'count the lines in a file'],
+    ['grep <text> <file>',  'show lines containing the text (-i ignore case, -c count, -n numbers)'],
+    ['mkdir [-p] <name>',   'make a directory'],
+    ['mv <src> <dst>',      'move or rename; an existing file at dst is replaced'],
+    ['cp <src> <dst>',      'copy a file; an existing file at dst is replaced'],
+    ['touch <name>',        'create an empty file'],
+    ['rm [-r] <path>',      'remove a file; -r removes a folder and its contents'],
+    ['rmdir <dir>',         'remove an empty directory'],
+    ['python3 <script>',    'run a Python script (simulated)'],
+    ['reset',               'restore the practice project (this sandbox only)'],
+    ['echo <text>',         'print text'],
+    ['history',             'show the commands you have run'],
+    ['clear',               'clear the screen'],
+    ['help',                'show this list']
+  ];
+  rows.forEach(function(r){
+    addLine([{text:'  ' + r[0].padEnd(22), cls:'t-ok'}, {text:r[1], cls:'t-out'}]);
+  });
+  outNote('Tab completes names. The up and down arrows bring back earlier commands.');
+  outNote('rm works here as it does on your own computer: there is no Trash. reset exists only in this practice terminal.');
+  outNote('Pipes and redirection (| and >) are covered in the primer but do not work here.');
+}
+
+function insideCwd(segs){
+  /* true when segs is the working directory or one of its ancestors */
+  var sk = key(segs), ck = key(cwd);
+  return ck === sk || ck.indexOf(sk + '/') === 0;
+}
+
+function cmdRm(argv){
+  var parsed = splitFlags(argv);
+  var flags = parsed.flags, operands = parsed.operands;
+  var illegal = null;
+  flags.forEach(function(f){ if ('rRfi'.indexOf(f) === -1 && !illegal) illegal = f; });
+  if (illegal){
+    outErr('rm: illegal option -- ' + illegal);
+    outErr('usage: rm [-rf] file ...');
+    return;
+  }
+  if (flags.has('i')){
+    outNote('rm -i asks before each removal on a real machine. This sandbox cannot ask, so nothing was removed. Run it without -i.');
+    return;
+  }
+  var recursive = flags.has('r') || flags.has('R');
+  var force = flags.has('f');
+  if (!operands.length){ outErr('usage: rm [-rf] file ...'); return; }
+  operands.forEach(function(t){
+    if (t === '.' || t === '..' || /\/\.\.?$/.test(t)){ outErr('rm: "." and ".." may not be removed'); return; }
+    var segs = resolvePath(t);
+    if (segs.length === 0){ outErr('rm: "/" may not be removed'); return; }
+    var node = getNode(segs);
+    if (!node){
+      if (!force) outErr('rm: ' + t + ': No such file or directory');
+      return;
+    }
+    if (node.type === 'dir'){
+      if (!recursive){ outErr('rm: ' + t + ': is a directory'); return; }
+      if (insideCwd(segs)){ outErr('rm: ' + t + ': you are standing inside it (cd out first)'); return; }
+    }
+    var parent = getNode(segs.slice(0, -1));
+    delete parent.children[segs[segs.length - 1]];
+    /* real rm prints nothing on success */
+    emit(node.type === 'dir' ? 'rm-dir' : 'rm-file');
+    emit('fs-changed');
+  });
+}
+
+function cmdRmdir(argv){
+  if (argv.length < 2){ outErr('usage: rmdir directory ...'); return; }
+  argv.slice(1).forEach(function(t){
+    var segs = resolvePath(t);
+    var node = getNode(segs);
+    if (!node){ outErr('rmdir: ' + t + ': No such file or directory'); return; }
+    if (node.type !== 'dir'){ outErr('rmdir: ' + t + ': Not a directory'); return; }
+    if (Object.keys(node.children).length){ outErr('rmdir: ' + t + ': Directory not empty'); return; }
+    if (insideCwd(segs)){ outErr('rmdir: ' + t + ': you are standing inside it (cd out first)'); return; }
+    var parent = getNode(segs.slice(0, -1));
+    delete parent.children[segs[segs.length - 1]];
+    emit('fs-changed');
+  });
+}
+
+function cmdReset(){
+  FS = buildFS();
+  cwd = PROJ.slice();
+  prevDir = null;
+  outOk('Practice project restored to its starting state.');
+  outNote('On a real computer, reset only cleans up a messed-up terminal screen. It does not bring files back.');
+  emit('reset');
+  emit('fs-changed');
+}
+
+/* Real commands that exist in a real shell but are out of scope here. */
+var NOT_INCLUDED = {
+  'find':'searches for files by name or type', 'less':'pages through a long file',
+  'more':'pages through a long file', 'man':'opens a manual page',
+  'nano':'opens a terminal text editor', 'vim':'opens a terminal text editor',
+  'vi':'opens a terminal text editor', 'open':'opens a file in a regular app',
+  'code':'opens VS Code', 'curl':'downloads from a URL', 'wget':'downloads from a URL',
+  'ssh':'connects to a remote computer', 'chmod':'changes file permissions',
+  'sudo':'runs a command as an administrator', 'ps':'lists processes',
+  'which':'locates a program', 'pip':'installs Python packages',
+  'jupyter':'starts a notebook server', 'exit':'closes a real shell session',
+  'git':'manages version history',
+  'mkdir-p':''
+};
+
+/* ============================================================
+   Tokenizer + dispatcher
+   ============================================================ */
+function tokenize(raw){
+  var toks = [], cur = '', q = null, has = false;
+  for (var i = 0; i < raw.length; i++){
+    var ch = raw.charAt(i);
+    if (q){
+      if (ch === q) q = null; else cur += ch;
+      has = true;
+      continue;
+    }
+    if (ch === '"' || ch === '\''){ q = ch; has = true; continue; }
+    if (ch === ' ' || ch === '\t'){
+      if (has){ toks.push(cur); cur = ''; has = false; }
+      continue;
+    }
+    if (ch === '|' || ch === '>' || ch === '<'){ return { err:'redir' }; }
+    if (ch === '&' && raw.charAt(i+1) === '&'){ return { err:'chain' }; }
+    cur += ch; has = true;
+  }
+  if (q) return { err:'quote' };
+  if (has) toks.push(cur);
+  return { toks:toks };
+}
+
+var HANDLERS = {
+  'pwd': cmdPwd, 'whoami': cmdWhoami, 'ls': cmdLs, 'cd': cmdCd, 'cat': cmdCat,
+  'head': cmdHead, 'tail': cmdTail, 'grep': cmdGrep, 'wc': cmdWc, 'mkdir': cmdMkdir,
+  'mv': cmdMv, 'cp': cmdCp, 'touch': cmdTouch,
+  'python3': cmdPython, 'echo': cmdEcho,
+  'history': cmdHistory, 'clear': cmdClear, 'help': cmdHelp,
+  'rm': cmdRm, 'rmdir': cmdRmdir, 'reset': cmdReset
+};
+
+var COMMAND_NAMES = ['pwd','whoami','ls','cd','cat','head','tail','grep','wc','mkdir','mv','cp','touch','rm','rmdir','python3','reset','echo','history','clear','help'];
+
+function execute(raw){
+  echoCommand(raw);
+  var trimmed = raw.trim();
+  if (trimmed !== ''){
+    historyList.push(trimmed);
+  }
+  EVENTS = new Set();
+  var cwdBefore = cwd.slice();
+
+  if (trimmed !== ''){
+    var tk = tokenize(raw);
+    if (tk.err === 'redir' || tk.err === 'chain'){
+      outNote('sandbox: pipes, redirection, and chaining commands (|, >, >>, &&) are covered in the primer but do not work here.');
+    } else if (tk.err === 'quote'){
+      outNote('sandbox: that quote never closed. Close it on the same line and try again.');
+    } else if (tk.toks.length){
+      var argv = tk.toks;
+      /* course-style invocations: uv run python ... and python ... */
+      if (argv[0] === 'uv' && argv[1] === 'run' && (argv[2] === 'python' || argv[2] === 'python3')){
+        argv = ['python3'].concat(argv.slice(3));
+      } else if (argv[0] === 'uv'){
+        outNote('uv: setting up environments with uv is covered in the setup guide. Here, run python3 directly.');
+        argv = null;
+      } else if (argv[0] === 'python'){
+        argv = ['python3'].concat(argv.slice(1));
+      }
+      if (argv){
+        var name = argv[0];
+        var handler = HANDLERS[name];
+        if (handler){
+          handler(argv);
+        } else if (Object.prototype.hasOwnProperty.call(NOT_INCLUDED, name)){
+          outNote('sandbox: ' + name + ' exists in a real shell (it ' + NOT_INCLUDED[name] + '), but it is not included here. Type help for what is.');
+        } else {
+          outErr('zsh: command not found: ' + name);
+        }
+      }
+    }
+  }
+
+  afterCommand(cwdBefore);
+  promptLabel.textContent = promptText();
+  renderTree();
+  scrollTerm();
+}
+
+/* ============================================================
+   Live file tree
+   ============================================================ */
+var treeEl = document.getElementById('tree');
+var treeCwdEl = document.getElementById('tree-cwd');
+var venvSeen = false;
+var lastTreeKeys = null;
+var motionOK = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
+
+var ICON_DIR = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path d="M1.5 4c0-.8.7-1.5 1.5-1.5h3.2l1.4 1.6H13c.8 0 1.5.7 1.5 1.5v5.9c0 .8-.7 1.5-1.5 1.5H3c-.8 0-1.5-.7-1.5-1.5z" fill="currentColor"/></svg>';
+var ICON_FILE = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><path d="M4 1h5l3.5 3.5V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="currentColor" opacity=".85"/></svg>';
+
+function treeRow(depth, name, k, isDir, opts){
+  opts = opts || {};
+  var row = document.createElement('div');
+  row.className = 'trow' + (isDir ? '' : ' is-file') + (opts.hidden ? ' is-hidden' : '');
+  row.style.setProperty('--d', depth);
+  row.setAttribute('data-key', k);
+  var icon = document.createElement('span');
+  icon.className = 'ticon';
+  icon.innerHTML = isDir ? ICON_DIR : ICON_FILE;
+  row.appendChild(icon);
+  var nm = document.createElement('span');
+  nm.className = 'tname';
+  nm.textContent = name;
+  row.appendChild(nm);
+  if (opts.meta){
+    var meta = document.createElement('span');
+    meta.className = 'tmeta';
+    meta.textContent = opts.meta;
+    row.appendChild(meta);
+  }
+  if (k === key(cwd)){
+    row.classList.add('here');
+    var pill = document.createElement('span');
+    pill.className = 'here-pill';
+    pill.textContent = 'you are here';
+    row.appendChild(pill);
+    var sr = document.createElement('span');
+    sr.className = 'sr-only';
+    sr.textContent = ' (current working directory)';
+    row.appendChild(sr);
+  }
+  return row;
+}
+
+function renderTree(){
+  treeCwdEl.textContent = fmtAbs(cwd);
+  var frag = document.createDocumentFragment();
+  var keys = [];
+
+  var homeKey = key(HOME);
+  var homeNode = getNode(HOME);
+  keys.push(homeKey);
+  frag.appendChild(treeRow(0, '~', homeKey, true, { meta: homeNode ? '(/Users/you)' : '(gone -- type reset)' }));
+
+  function walk(dirNode, segs, depth){
+    var names = Object.keys(dirNode.children);
+    var dirs = names.filter(function(n){ return dirNode.children[n].type === 'dir'; }).sort();
+    var files = names.filter(function(n){ return dirNode.children[n].type !== 'dir'; }).sort();
+    dirs.concat(files).forEach(function(n){
+      var hidden = n.charAt(0) === '.';
+      if (hidden && !venvSeen) return;
+      var child = dirNode.children[n];
+      var childSegs = segs.concat([n]);
+      var k = childSegs.join('/');
+      keys.push(k);
+      var isDir = child.type === 'dir';
+      var opts = { hidden:hidden };
+      if (isDir && Object.keys(child.children).length === 0) opts.meta = '(empty)';
+      if (hidden) opts.meta = '(hidden)';
+      frag.appendChild(treeRow(depth, isDir ? n + '/' : n, k, isDir, opts));
+      if (isDir && !hidden) walk(child, childSegs, depth + 1);
+    });
+  }
+
+  if (homeNode) walk(homeNode, HOME, 1);
+
+  treeEl.textContent = '';
+  treeEl.appendChild(frag);
+
+  /* flash rows that are new since the last render */
+  if (lastTreeKeys && motionOK){
+    keys.forEach(function(k){
+      if (!lastTreeKeys.has(k)){
+        var row = treeEl.querySelector('[data-key="' + k.replace(/"/g, '') + '"]');
+        if (row) row.classList.add('flash');
+      }
+    });
+  }
+  lastTreeKeys = new Set(keys);
+}
+
+/* ============================================================
+   Missions
+   ============================================================ */
+/* Anything in <code> is typed exactly as shown, then Enter. */
+var MISSION_BRIEF = [
+  'Find out where you are: type <code>pwd</code> and press Enter.',
+  'List what is here: type <code>ls</code>.',
+  'Type <code>cd data</code>, then <code>pwd</code> to confirm the move.',
+  'Look at the start of the file: type <code>head sample.csv</code>.',
+  'Return to the project root: type <code>cd ..</code>',
+  'Make a folder and step into it: type <code>mkdir scratch</code>, then <code>cd scratch</code>. Create an empty file there: type <code>touch notes.txt</code>, then <code>ls</code>.',
+  'Type <code>cd ..</code> to go back to the root, then <code>cp notes.md scratch/notes_copy.md</code>, then <code>ls scratch</code>.',
+  'From the root, type <code>python3 scripts/summarize_csv.py</code>.',
+  'Type <code>cd scripts</code>, then <code>python3 summarize_csv.py</code>, then answer the question under the terminal.',
+  'From the root, type <code>mv summary.txt results/</code> (keep the trailing slash), then <code>ls results</code>.',
+  'Make a new summary.txt: type <code>python3 scripts/summarize_csv.py</code>. Then move it with a typo in the folder name: type <code>mv summary.txt result</code>. Answer the question under the terminal.',
+  'Type <code>pwd</code>, then <code>ls -l result</code>, then <code>rm result</code>, then answer the question under the terminal.',
+  'Type <code>rm results</code> and read the error, then <code>rm -r results</code>, then <code>reset</code>.'
+];
+var TOTAL = MISSION_BRIEF.length;
+var missionDone = MISSION_BRIEF.map(function(){ return false; });
+var qOpen = { 1:false, 2:false, 3:false };
+var dirRemoved = false, rmDirNoted = false;
+var stripEl = document.getElementById('strip');
+var stripBadge = document.getElementById('strip-badge');
+var stripText = document.getElementById('strip-text');
+var mcountEl = document.getElementById('mcount');
+markCurrent(0);
+
+function doneCount(){
+  return missionDone.filter(Boolean).length;
+}
+
+function updateStrip(){
+  var n = doneCount();
+  mcountEl.textContent = n + ' / ' + TOTAL + ' complete';
+  if (n === TOTAL){
+    markCurrent(-1);
+    stripEl.classList.add('all-done');
+    stripBadge.textContent = 'All done';
+    stripText.textContent = 'All ' + TOTAL + ' missions done. Read the Remember section below.';
+    return;
+  }
+  var next = missionDone.indexOf(false);
+  stripBadge.textContent = 'Current mission ' + (next + 1) + ' of ' + TOTAL;
+  stripText.innerHTML = MISSION_BRIEF[next];
+  markCurrent(next);
+}
+
+function markCurrent(next){
+  var items = document.querySelectorAll('ol.missions > .mission');
+  for (var i = 0; i < items.length; i++){
+    var isCur = i === next;
+    items[i].classList.toggle('current', isCur);
+    if (isCur) items[i].setAttribute('aria-current', 'step');
+    else items[i].removeAttribute('aria-current');
+  }
+}
+
+function completeMission(i){
+  if (missionDone[i]) return;
+  missionDone[i] = true;
+  var li = document.getElementById('mission-' + i);
+  li.classList.add('done');
+  var stat = li.querySelector('.mstat');
+  if (stat) stat.textContent = 'Mission ' + (i + 1) + ' complete.';
+  updateStrip();
+}
+
+var slotEl = document.getElementById('q-slot');
+var slotCard = null;
+
+function moveToSlot(card){
+  returnSlotCard(true);
+  var ph = document.createElement('p');
+  ph.className = 'qmoved';
+  ph.id = 'qmoved-' + card.id;
+  ph.textContent = 'This question is now under the terminal.';
+  card.parentNode.insertBefore(ph, card);
+  slotEl.appendChild(card);
+  slotEl.hidden = false;
+  slotCard = card;
+}
+
+function returnSlotCard(force){
+  if (!slotCard) return;
+  if (!force && !slotCard.dataset.answered) return;
+  var ph = document.getElementById('qmoved-' + slotCard.id);
+  if (ph){
+    ph.parentNode.insertBefore(slotCard, ph);
+    ph.parentNode.removeChild(ph);
+  }
+  slotCard = null;
+  slotEl.hidden = true;
+}
+
+function unlockQ(n, missionNo){
+  if (qOpen[n]) return;
+  qOpen[n] = true;
+  var card = document.getElementById('qcard-' + n);
+  card.classList.remove('locked');
+  document.getElementById('q' + n + '-fs').disabled = false;
+  moveToSlot(card);
+  outNote('(A question appeared under the terminal. Answer it, then continue.)');
+}
+
+function baseOf(k){ return k.slice(k.lastIndexOf('/') + 1); }
+
+function afterCommand(cwdBefore){
+  var ck = key(cwd);
+  if (EVENTS.has('pwd')){
+    completeMission(0);
+    if (ck === DATA_KEY) completeMission(2);
+  }
+  if (EVENTS.has('ls-ok')) completeMission(1);
+  if (EVENTS.has('ls-a-root') && !venvSeen){
+    venvSeen = true;
+    outNote('(The hidden .venv entry now shows in the tree on the right.)');
+  }
+  if (EVENTS.has('viewed-sample')) completeMission(3);
+  if (EVENTS.has('cd-ok') && ck === PROJ_KEY && key(cwdBefore) !== PROJ_KEY) completeMission(4);
+  var listedScratch = EVENTS.has('ls-ok') && LS_SEEN.indexOf(PROJ_KEY + '/scratch') !== -1;
+  if (listedScratch && getNode(PROJ.concat(['scratch', 'notes.txt']))) completeMission(5);
+  if (listedScratch && getNode(PROJ.concat(['scratch', 'notes_copy.md']))) completeMission(6);
+  if (EVENTS.has('ls-ok') && LS_SEEN.indexOf(RESULTS_KEY) !== -1 && getNode(PROJ.concat(['results', 'summary.txt']))) completeMission(9);
+  if (EVENTS.has('script-ok') && ck === PROJ_KEY) completeMission(7);
+  if (EVENTS.has('script-fail') && ck === SCRIPTS_KEY) unlockQ(1, 9);
+  if (EVENTS.has('mv-ok') && MV_LAST){
+    var typo = MV_LAST.to === PROJ_KEY + '/result' ||
+               (MV_LAST.renamed && baseOf(MV_LAST.from) === 'summary.txt' && baseOf(MV_LAST.to) !== 'summary.txt');
+    if (typo) unlockQ(2, 11);
+  }
+  if (EVENTS.has('rm-file')) unlockQ(3, 12);
+  if (EVENTS.has('rm-dir')){
+    dirRemoved = true;
+    if (!rmDirNoted){
+      rmDirNoted = true;
+      outNote('(The folder and everything in it are gone. Type reset to bring the project back.)');
+    }
+  }
+  if (EVENTS.has('reset') && dirRemoved) completeMission(12);
+}
+
+/* ============================================================
+   Predict-then-reveal questions
+   ============================================================ */
+function wireQuestion(qname, correct, feedbacks, onCorrect){
+  var btn = document.getElementById(qname + '-check');
+  var fb = document.getElementById(qname + '-feedback');
+  btn.addEventListener('click', function(){
+    var sel = document.querySelector('input[name="' + qname + '"]:checked');
+    document.querySelectorAll('input[name="' + qname + '"]').forEach(function(r){
+      r.closest('.qopt').classList.remove('picked-ok', 'picked-err');
+    });
+    if (!sel){
+      fb.className = 'qfeedback';
+      fb.textContent = 'Choose an answer first.';
+      return;
+    }
+    var opt = sel.closest('.qopt');
+    if (sel.value === correct){
+      btn.closest('.qcard').dataset.answered = '1';
+      opt.classList.add('picked-ok');
+      fb.className = 'qfeedback fok';
+      fb.innerHTML = 'Correct. <span class="fwhy">' + feedbacks[sel.value] + '</span>';
+      document.getElementById(qname + '-fs').querySelectorAll('input, button').forEach(function(el){ el.disabled = true; });
+      onCorrect();
+    } else {
+      opt.classList.add('picked-err');
+      fb.className = 'qfeedback ferr';
+      fb.innerHTML = 'Not yet. <span class="fwhy">' + feedbacks[sel.value] + '</span>';
+    }
+  });
+}
+
+wireQuestion('q1', 'b', {
+  a: 'Python ran the script both times. The failure came from a path the script itself tried to open.',
+  b: 'The script&rsquo;s <code>open("data/sample.csv")</code> starts from the working directory, so from <code>scripts/</code> Python looked for <code>scripts/data/sample.csv</code>.',
+  c: 'Nothing moved or disappeared. Check which directory the relative path <code>data/sample.csv</code> started from.'
+}, function(){
+  completeMission(8);
+  var ex = document.getElementById('explainer-1');
+  ex.hidden = false;
+});
+
+wireQuestion('q2', 'b', {
+  a: 'Nothing was deleted. <code>mv</code> never deletes. Look at the tree: there is a new file in the project root.',
+  b: 'No folder named <code>result</code> existed, so <code>mv</code> used the second argument as a new name. The file is still there, called <code>result</code>.',
+  c: '<code>mv</code> does not guess. It uses the exact path you typed, and <code>result</code> is not <code>results</code>.'
+}, function(){
+  completeMission(10);
+  document.getElementById('explainer-2').hidden = false;
+});
+
+wireQuestion('q3', 'b', {
+  a: 'The Trash belongs to Finder and Explorer. <code>rm</code> does not use it, so the file is gone.',
+  b: '<code>rm</code> printed nothing because it succeeded. There is no Trash and no undo; only a copy made earlier can bring the file back.',
+  c: '<code>ls -a</code> shows hidden files, and <code>rm</code> hides nothing. Run <code>ls -a</code>: <code>result</code> is not there.'
+}, function(){
+  completeMission(11);
+  document.getElementById('explainer-3').hidden = false;
+});
+
+/* ============================================================
+   Input: enter, history, tab completion, block cursor
+   ============================================================ */
+var histIdx = null, histDraft = '';
+
+function updateCursor(){
+  var pos = input.selectionStart;
+  if (pos === null || pos === undefined) pos = input.value.length;
+  blockCursor.style.left = pos + 'ch';
+}
+
+function setInputValue(v){
+  input.value = v;
+  input.setSelectionRange(v.length, v.length);
+  updateCursor();
+}
+
+function longestCommonPrefix(arr){
+  if (!arr.length) return '';
+  var p = arr[0];
+  for (var i = 1; i < arr.length; i++){
+    while (arr[i].indexOf(p) !== 0) p = p.slice(0, -1);
+  }
+  return p;
+}
+
+function tabComplete(){
+  var val = input.value;
+  var idx = val.lastIndexOf(' ');
+  var before = idx === -1 ? '' : val.slice(0, idx + 1);
+  var tok = idx === -1 ? val : val.slice(idx + 1);
+  var cands = [];
+
+  if (idx === -1){
+    /* completing the command itself */
+    COMMAND_NAMES.forEach(function(c){
+      if (c.indexOf(tok) === 0) cands.push({ text:c, suffix:' ', display:c });
+    });
+  } else {
+    /* completing a path */
+    var slash = tok.lastIndexOf('/');
+    var dirPart = slash === -1 ? '' : tok.slice(0, slash + 1);
+    var base = slash === -1 ? tok : tok.slice(slash + 1);
+    var dirSegs = dirPart === '' ? cwd.slice() : resolvePath(dirPart);
+    var dnode = getNode(dirSegs);
+    if (!dnode || dnode.type !== 'dir') return;
+    var firstWord = val.trim().split(/\s+/)[0];
+    var names = Object.keys(dnode.children).filter(function(n){
+      if (n.charAt(0) === '.') return base.charAt(0) === '.';
+      return true;
+    });
+    if (firstWord === 'cd'){
+      names = names.filter(function(n){ return dnode.children[n].type === 'dir'; });
+    }
+    names.sort();
+    names.forEach(function(n){
+      if (n.indexOf(base) === 0){
+        var isDir = dnode.children[n].type === 'dir';
+        cands.push({ text: dirPart + n, suffix: isDir ? '/' : ' ', display: n + (isDir ? '/' : '') });
+      }
+    });
+  }
+
+  if (!cands.length) return;
+  if (cands.length === 1){
+    setInputValue(before + cands[0].text + cands[0].suffix);
+    return;
+  }
+  var common = longestCommonPrefix(cands.map(function(c){ return c.text; }));
+  if (common.length > tok.length){
+    setInputValue(before + common);
+  } else {
+    outNote(cands.map(function(c){ return c.display; }).join('  '));
+    scrollTerm();
+  }
+}
+
+input.addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){
+    returnSlotCard(false);
+    e.preventDefault();
+    var raw = input.value;
+    setInputValue('');
+    histIdx = null; histDraft = '';
+    execute(raw);
+    return;
+  }
+  if (e.key === 'Tab'){
+    e.preventDefault();
+    tabComplete();
+    return;
+  }
+  if (e.key === 'ArrowUp'){
+    e.preventDefault();
+    if (!historyList.length) return;
+    if (histIdx === null){ histDraft = input.value; histIdx = historyList.length - 1; }
+    else if (histIdx > 0){ histIdx--; }
+    setInputValue(historyList[histIdx]);
+    return;
+  }
+  if (e.key === 'ArrowDown'){
+    e.preventDefault();
+    if (histIdx === null) return;
+    if (histIdx < historyList.length - 1){
+      histIdx++;
+      setInputValue(historyList[histIdx]);
+    } else {
+      histIdx = null;
+      setInputValue(histDraft);
+    }
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')){
+    /* only intercept plain Ctrl-C with no selection to copy */
+    var hasSelection = input.selectionStart !== input.selectionEnd;
+    if (e.ctrlKey && !hasSelection){
+      e.preventDefault();
+      addLine([{text: promptText() + ' ', cls:'t-prompt'}, {text: input.value + '^C', cls:'t-dim'}]);
+      setInputValue('');
+      histIdx = null;
+      scrollTerm();
+    }
+    return;
+  }
+  if (e.ctrlKey && (e.key === 'l' || e.key === 'L')){
+    e.preventDefault();
+    cmdClear();
+    return;
+  }
+  window.requestAnimationFrame(updateCursor);
+});
+
+['input','keyup','click','select'].forEach(function(ev){
+  input.addEventListener(ev, updateCursor);
+});
+input.addEventListener('focus', function(){ blockCursor.classList.remove('idle'); updateCursor(); });
+input.addEventListener('blur', function(){ blockCursor.classList.add('idle'); });
+
+/* click anywhere on the terminal focuses the input (unless selecting text) */
+function focusTerm(){
+  var sel = window.getSelection();
+  if (sel && sel.type === 'Range') return;
+  input.focus({ preventScroll:true });
+}
+termBody.addEventListener('click', focusTerm);
+document.getElementById('term-input-row').addEventListener('click', focusTerm);
+
+/* ============================================================
+   Boot
+   ============================================================ */
+addLine([{text:'COMPSS 211A practice shell. ', cls:'t-out'}, {text:'Type ', cls:'t-out'}, {text:'help', cls:'t-ok'}, {text:' to see every command you can use here.', cls:'t-out'}]);
+outNote('This terminal is simulated. Nothing you type here can change your real computer.');
+out('');
+promptLabel.textContent = promptText();
+renderTree();
+updateStrip();
+updateCursor();
+
+})();
+</script>
+<script src="sandbox/sandbox.js"></script>
+<script src="sandbox/week04-project.js"></script>
+<script>
+Sandbox.terminal(document.getElementById("real-terminal"), {
+  files: window.SANDBOX_WEEK04_PROJECT,
+  packages: ["pandas"],
+  root: "/Users/you/week04_reproducible-analyses",
+  welcome: "Type help to see the commands. Start with pwd and ls."
+});
+</script>
+</body>
+</html>
