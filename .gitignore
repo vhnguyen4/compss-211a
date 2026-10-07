@@ -7,6 +7,26 @@
 .vscode/
 wandb/
 *.wandb
-/course-planning
+# Instructor-only preparation scripts and working source notes belong here,
+# outside student lesson folders and GitHub.
+/course-planning/
+# Prevent preparation helpers and working source notes from being re-added to lessons.
+/lessons/**/prepare_*.py
+/lessons/**/*_sources.md
 /generated/
 .agents/skills/bcourses-admin/
+/output/
+/tmp/
+
+# Week 4 runtime files and generated reports
+/lessons/week04_reproducible-analyses/**/__pycache__/
+/lessons/week04_reproducible-analyses/outputs/*
+!/lessons/week04_reproducible-analyses/outputs/.gitkeep
+
+# Students' personal copies of course notebooks (keeps pulls conflict-free)
+*_mine.ipynb
+*-mine.ipynb
+* copy.ipynb
+
+# Week 5: students' copies of the SQL script
+*_mine.sql

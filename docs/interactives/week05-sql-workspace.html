@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 5 SQL Workspace · COMPSS 211A</title>
+<meta name="description" content="Practice SQL with San Francisco 311 requests.">
+<style>
+:root{--navy:#002676;--gold:#FDBA12;--ink:#1A1A1A;--muted:#465973;--line:#CBD4E1;--pale:#EEF3FA;--paper:#fff;--mark:#FFF1CC;--good:#17643C;--bad:#9B1C1C;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+a{color:var(--navy)}
+button,textarea,select{font:inherit}
+button{cursor:pointer;border:1px solid var(--navy);border-radius:4px;padding:8px 14px;color:var(--navy);background:white;font-weight:600}
+button:hover:not(:disabled){background:var(--pale)}
+button:disabled{cursor:default;opacity:.55}
+button:focus-visible,a:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.primary{background:var(--navy);color:white}
+.primary:hover:not(:disabled){background:#173F91}
+.quiet{border-color:transparent;text-decoration:underline;font-weight:400;padding:2px 4px}
+.wrap{max-width:1180px;margin:auto;padding:0 24px}
+.mast{background:var(--navy);color:white}
+.mast .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:13px;padding-bottom:13px;font-size:.88rem}
+.mast a{color:white}
+.brand{font:700 1.05rem Georgia,serif;color:var(--gold);margin-right:12px}
+header{background:var(--navy);color:white;border-bottom:5px solid var(--gold);padding:24px 0 26px}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 12px}
+header p{max-width:720px;margin:0 0 10px}
+.meta{font-size:.9rem;color:#DFE8FF}
+main.wrap{padding-top:24px;padding-bottom:40px}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:32px;align-items:start}
+h2{color:var(--navy);font-size:1.3rem;line-height:1.3;margin:2px 0 10px}
+h2:focus{outline:none}
+h3{margin:14px 0 2px;color:var(--navy);font-size:1rem;font-family:var(--mono)}
+h4{margin:18px 0 6px;color:var(--navy);font-size:1rem}
+p{max-width:75ch;margin:8px 0 12px}
+.small{font-size:.88rem;color:var(--muted)}
+code{font-family:var(--mono);font-size:.88em}
+.reference{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;border:1px solid var(--line);border-radius:6px;padding:12px 16px;font-size:.9rem}
+.reference > details > summary{font-size:1.05rem}
+.reference ul{margin:4px 0 0;padding-left:18px;font-family:var(--mono);font-size:.84rem;color:var(--navy)}
+.reference p{margin:4px 0}
+.name{border:0;border-radius:2px;background:none;padding:0 2px;margin-left:-2px;font:inherit;color:inherit;text-align:left}
+.name:hover:not(:disabled){background:var(--mark)}
+.work{min-width:0}
+.status{padding:10px 14px;border-left:4px solid var(--gold);background:var(--mark);margin:0 0 16px}
+.status.ready{display:none}
+.status.error{border-color:var(--bad);background:#FBEAEA}
+.pager{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:0 0 16px}
+.pager select{padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:white;color:var(--ink);max-width:100%}
+.progress{font-size:.9rem;color:var(--muted);margin-left:auto}
+.q{border:1px solid var(--line);border-radius:6px;padding:18px 18px 14px;scroll-margin-top:16px}
+.q .level{font-size:.88rem;color:var(--muted)}
+.task{font-size:1.08rem;margin:6px 0 12px}
+.task b{color:var(--navy)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:4px 0 14px}
+.tabs button{border:1px solid transparent;border-bottom:0;border-radius:4px 4px 0 0;background:none;padding:7px 16px;color:var(--muted);margin-bottom:-1px}
+.tabs button[aria-selected=true]{border-color:var(--line);background:white;color:var(--navy)}
+.examples{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:8px 0 6px}
+.example{min-width:0;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.example.main{grid-column:1/-1}
+.example .label{padding:6px 12px;background:var(--pale);color:var(--navy);font-weight:600;font-size:.88rem}
+/* The pandas and R versions are for comparison, so they are lighter than the SQL example. */
+.example:not(.main) .label{background:white;color:var(--muted);border-bottom:1px solid var(--line)}
+.example:not(.main) pre{background:#F6F8FC;color:var(--ink)}
+pre{background:#101F48;color:#F0F4FF;font:13px/1.6 var(--mono);padding:12px 14px;margin:0;overflow:auto;white-space:pre-wrap}
+pre.answer{border-radius:4px}
+textarea{width:100%;min-height:150px;font-family:var(--mono);font-size:.9rem;line-height:1.5;padding:10px 12px;border:1px solid var(--line);border-radius:4px;background:#FBFCFE;color:var(--ink);resize:vertical}
+.actions{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:10px 0}
+.feedback{margin:8px 0;padding:10px 12px;border-radius:4px;font-size:.95rem;display:none}
+.feedback.show{display:block}
+.feedback.good{background:#E8F4EC;color:var(--good)}
+.feedback.bad{background:#FBEAEA;color:var(--bad)}
+.feedback p{margin:0 0 8px;color:var(--ink)}
+.feedback p:last-child{margin-bottom:0}
+.result{overflow:auto;max-height:430px;margin:8px 0 12px}
+.result th{position:sticky;top:0}
+.result td{white-space:nowrap}
+.trail{margin:8px 0 4px;font-size:.88rem;color:var(--muted)}
+.trail b{color:var(--ink);font-weight:600}
+table{border-collapse:collapse;font-size:.88rem;min-width:40%}
+th{background:var(--pale);color:var(--navy);font-weight:600;text-align:left;white-space:nowrap}
+th,td{padding:4px 10px;border-bottom:1px solid var(--line);line-height:1.4}
+td.null{color:var(--muted);font-style:italic}
+details{margin:6px 0}
+summary{cursor:pointer;color:var(--navy);font-weight:600}
+a.button{display:inline-block;border:1px solid var(--navy);border-radius:4px;padding:8px 14px;font-weight:600;text-decoration:none;background:white}
+a.button:hover{background:var(--pale)}
+.scratch{border:1px solid var(--line);border-radius:6px;padding:10px 18px;margin-top:16px}
+.scratch textarea{min-height:96px}
+footer{border-top:1px solid var(--line);padding:18px 0 30px;font-size:.85rem;color:var(--muted)}
+[hidden]{display:none!important}
+@media(max-width:860px){.wrap{padding-left:16px;padding-right:16px}.layout{grid-template-columns:minmax(0,1fr);gap:16px}.reference{position:static;max-height:none}.q{padding:14px 12px}.progress{margin-left:0}.pager select{width:100%}}
+</style>
+<link rel="stylesheet" href="sandbox/sandbox.css">
+</head>
+<body>
+<div class="mast"><div class="wrap"><span><span class="brand">UC Berkeley</span>COMPSS 211A · Computing I</span><a href="../index.html">All interactives</a></div></div>
+<header><div class="wrap">
+<h1>Week 5 SQL workspace</h1>
+<p>Practice SQL with San Francisco 311 requests.</p>
+<div class="meta">Week 5 · In class · Needs an internet connection</div>
+<p style="margin-top:12px"><a style="color:white" href="https://github.com/macss-berkeley/compss-211a/tree/main/lessons/week05_relational-data">End-of-class activity: food access in pairs, in DuckDB →</a></p>
+</div></header>
+
+<main class="wrap layout">
+<aside class="reference" aria-label="Tables">
+<details id="tablesBox" open><summary>Tables in this database</summary>
+  <p class="small">Click a name to put it in your query.</p>
+  <div id="schema"><p class="small">Loading…</p></div>
+  <p class="small" style="margin-top:12px">To preview a table, run <code>SELECT * FROM table_name LIMIT 5;</code></p>
+</details>
+</aside>
+
+<div class="work">
+<div class="status" id="engineStatus" role="status">Loading the SQL engine and the tables…</div>
+<nav class="pager" aria-label="Steps">
+  <select id="picker" aria-label="Go to step"></select>
+  <button id="prev">Previous</button>
+  <button id="next">Next</button>
+  <span class="progress" id="progress" aria-live="polite"></span>
+</nav>
+<div id="steps"></div>
+<details class="scratch"><summary>Scratch query</summary>
+  <p class="small">Run any query here. It does not change your answers.</p>
+  <textarea id="scratch" spellcheck="false" autocomplete="off" aria-label="Scratch query">SELECT *
+FROM requests
+LIMIT 5;</textarea>
+  <div class="actions"><button data-act="scratch" disabled>Run</button><button class="quiet" data-duck="scratch">Open in DuckDB</button></div>
+  <div class="feedback" id="scratch-fb" aria-live="polite"></div>
+  <div id="scratch-out"></div>
+</details>
+<p class="small" style="margin-top:18px"><button id="reset" class="quiet">Start over</button> Clears your queries and checks on this page.</p>
+</div>
+</main>
+
+<footer><div class="wrap">COMPSS 211A · UC Berkeley · CC BY 4.0. Data: San Francisco 311 requests opened August 3–9, 2026, without the 11 requests marked Test; the city’s Supervisor Districts (2022) table. The SQL engine, <a href="https://github.com/sql-js/sql.js">sql.js</a>, and Python load from jsDelivr. R loads from webr.r-wasm.org.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+<script src="sandbox/sandbox.js"></script>
+<script>
+'use strict';
+// The tables. Each file sits in data/week05/ next to this page.
+// keep: an optional test that decides which rows of the file are loaded.
+// A column's third entry is its name in the file, or a function that computes it from the row.
+const TABLES = [
+  {name: 'requests', file: 'sf311_requests.csv', note: 'One row per 311 request. is_open is 1 if the status is Open, otherwise 0.',
+   columns: [['request_id', 'TEXT'], ['opened_at', 'TEXT'], ['closed_at', 'TEXT'], ['status', 'TEXT'], ['category', 'TEXT'], ['channel', 'TEXT'], ['district', 'INTEGER'], ['hours_to_close', 'REAL'], ['duration_note', 'TEXT'],
+             ['is_open', 'INTEGER', row => row.status === 'Open' ? 1 : 0]],
+   keep: row => row.channel !== 'Test'},
+  {name: 'districts', file: 'sf_supervisor_districts.csv', note: 'One row per supervisor district.',
+   columns: [['district', 'INTEGER', 'sup_dist'], ['district_name', 'TEXT', 'sup_dist_name']]},
+
+];
+
+// One entry per step. A step with no task shows only its example.
+// view: the view a step builds; the check compares its rows with expect, a query on the base tables.
+// starter: what the box starts with; scaffold: a starting point with blanks, offered in the hint.
+// startFrom: a step whose query this step's box starts from. accept: a test for other results that also count as correct. wrong: what to say when the values differ.
+// pyPre, rPre: code from earlier steps that the Python and R boxes run first. extra: not counted in the progress.
+// example: a query that is shown and can be run, with the pandas and R lines that do the same job.
+// starter: what the query box starts with. answer: the model query the result is compared with.
+// py, r: one possible answer in pandas and in R (dplyr), shown in the Python and R tabs.
+// pyStart, rStart: what the Python and R boxes start with. They have the same blanks as starter.
+// ordered: true checks exact order; {column, direction} checks that key and allows ties in either order. after: shown once the answer is correct.
+const STEPS = [
+  {topic: 'What is in requests?',
+   intro: 'The list of tables shows their names and columns, but not their rows. To see some rows, use <code>SELECT * FROM table_name LIMIT 5;</code>, as you would use <code>.head()</code> in pandas or <code>head()</code> in R. <code>SELECT *</code> returns every column. <code>LIMIT 5</code> keeps five rows. Without <code>ORDER BY</code>, SQL does not guarantee which rows come first.',
+   example: {pandas: 'requests.head(5)', r: 'head(requests, 5)'},
+   task: "Show five rows from the <code>requests</code> table, including all columns.",
+   starter: 'SELECT *\nFROM ____\nLIMIT 5;',
+   answer: 'SELECT *\nFROM requests\nLIMIT 5;', ordered: false,
+   accept: mine => fiveRowsOf('requests', mine),
+   pyStart: '____.head(5)',
+   rStart: 'head(____, 5)',
+   py: 'requests.head(5)',
+   r: 'head(requests, 5)',
+   hint: 'Replace the blank with the name of the table. Clicking <code>requests</code> in the list of tables puts it in the box.',
+   after: 'Each row is one service request. The table has 16,865 rows; these are five of them.'},
+  {topic: 'What is in districts?',
+   intro: 'Now look at the other table. Write the whole SQL query; you can look back at step 1.',
+   example: {pandas: 'districts.head(5)', r: 'head(districts, 5)'},
+   task: "Show five rows from the <code>districts</code> table, including all columns.",
+   starter: '',
+   scaffold: 'SELECT *\nFROM ____\nLIMIT 5;',
+   answer: 'SELECT *\nFROM districts\nLIMIT 5;', ordered: false,
+   accept: mine => fiveRowsOf('districts', mine),
+   pyStart: '____.head(5)',
+   rStart: 'head(____, 5)',
+   py: 'districts.head(5)',
+   r: 'head(districts, 5)',
+   hint: 'It is the query from step 1 with the other table name: <code>SELECT *</code>, then <code>FROM</code> and the table, then <code>LIMIT 5</code>.',
+   after: 'The table has 11 rows, one per supervisor district. The <code>district</code> column is in both tables. Later steps use it to match each request with its district name.'},
+  {topic: 'List the values in a column',
+   intro: '<code>SELECT DISTINCT</code> shows each value in a column once. Use it to see what a column contains before you filter on it.',
+   example: {sql: 'SELECT DISTINCT status\nFROM requests;', pandas: 'requests["status"].unique()', r: 'distinct(requests, status)'},
+   task: "Using the <code>requests</code> table, list the different values in the <code>channel</code> column. Show each value only once.",
+   starter: 'SELECT DISTINCT ____\nFROM requests;',
+   answer: 'SELECT DISTINCT channel\nFROM requests;', ordered: false,
+   pyStart: 'requests["____"].unique()',
+   rStart: 'distinct(requests, ____)',
+   py: 'requests["channel"].unique()',
+   r: 'distinct(requests, channel)',
+   hint: 'Replace the blank with the name of the column.',
+   after: 'One of the values is <code>NULL</code>. Some requests have no channel recorded.'},
+  {topic: 'Select and filter',
+   intro: '<code>SELECT</code> lists the columns. <code>WHERE</code> keeps the rows that pass a test. <code>ORDER BY</code> sorts the rows. Text goes in single quotes.',
+   example: {sql: 'SELECT request_id, category, district\nFROM requests\nWHERE channel = \'Phone\'\nORDER BY request_id\nLIMIT 5;',
+             pandas: 'requests.loc[\n    requests["channel"] == "Phone",\n    ["request_id", "category", "district"],\n].sort_values("request_id").head(5)',
+             r: 'requests |>\n  filter(channel == "Phone") |>\n  select(request_id, category, district) |>\n  arrange(request_id) |>\n  head(5)'},
+   task: "Using the <code>requests</code> table, find the rows where <code>channel</code> is <code>'Web'</code>.<br><br>Show the <code>request_id</code>, <code>status</code>, and <code>hours_to_close</code> columns. Sort by <code>request_id</code> from smallest to largest and show the first ten rows.",
+   starter: 'SELECT request_id, ____, ____\nFROM requests\nWHERE channel = \'____\'\nORDER BY request_id\nLIMIT ____;',
+   answer: 'SELECT request_id, status, hours_to_close\nFROM requests\nWHERE channel = \'Web\'\nORDER BY request_id\nLIMIT 10;', ordered: true,
+   wrong: 'Some values differ. Check the channel in WHERE, and that ORDER BY sorts by request_id from smallest to largest.',
+   pyStart: 'requests.loc[\n    requests["channel"] == "____",\n    ["request_id", "____", "____"],\n].sort_values("request_id").head(____)',
+   rStart: 'requests |>\n  filter(channel == "____") |>\n  select(request_id, ____, ____) |>\n  arrange(request_id) |>\n  head(____)',
+   py: 'requests.loc[\n    requests["channel"] == "Web",\n    ["request_id", "status", "hours_to_close"],\n].sort_values("request_id").head(10)',
+   r: 'requests |>\n  filter(channel == "Web") |>\n  select(request_id, status, hours_to_close) |>\n  arrange(request_id) |>\n  head(10)',
+   hint: 'The two columns are <code>status</code> and <code>hours_to_close</code>. The channel is <code>\'Web\'</code>, with a capital W. The limit is 10.'},
+  {topic: 'Write a query: select and filter',
+   intro: 'Use the operations from the previous step. Write the whole SQL query; you can look back at earlier examples.',
+   task: "Using the <code>requests</code> table, find the rows where <code>status</code> is <code>'Open'</code>.<br><br>Show only the <code>request_id</code> and <code>category</code> columns. Sort by <code>request_id</code> from smallest to largest and show the first five rows. Write the whole query.",
+   starter: '',
+   scaffold: 'SELECT ____, ____\nFROM requests\nWHERE ____ = \'____\'\nORDER BY ____\nLIMIT ____;',
+   answer: 'SELECT request_id, category\nFROM requests\nWHERE status = \'Open\'\nORDER BY request_id\nLIMIT 5;', ordered: true,
+   wrong: 'Check that you return request_id and category, keep Open requests, sort by request_id, and return the first five.',
+   pyStart: 'requests.loc[\n    requests["____"] == "____",\n    ["____", "____"],\n].sort_values("____").head(____)',
+   rStart: 'requests |>\n  filter(____ == "____") |>\n  select(____, ____) |>\n  arrange(____) |>\n  head(____)',
+   py: 'requests.loc[\n    requests["status"] == "Open",\n    ["request_id", "category"],\n].sort_values("request_id").head(5)',
+   r: 'requests |>\n  filter(status == "Open") |>\n  select(request_id, category) |>\n  arrange(request_id) |>\n  head(5)',
+   hint: 'Choose the columns with <code>SELECT</code>, name the table with <code>FROM</code>, filter <code>status</code> with <code>WHERE</code>, then sort and limit the result. The value is <code>\'Open\'</code>.'},
+  {topic: 'Count groups',
+   intro: '<code>GROUP BY</code> makes one row per group. <code>COUNT(*)</code> counts its rows. <code>AS</code> names the result column. <code>DESC</code> sorts largest first; a second sort column breaks ties.',
+   example: {sql: 'SELECT channel, COUNT(*) AS request_count\nFROM requests\nGROUP BY channel\nORDER BY request_count DESC, channel ASC;',
+             pandas: '(requests.groupby("channel", dropna=False)\n .size().reset_index(name="request_count")\n .sort_values(["request_count", "channel"],\n              ascending=[False, True]))',
+             r: 'requests |>\n  count(channel, name = "request_count") |>\n  arrange(desc(request_count), channel)'},
+   task: "Using the <code>requests</code> table, find the rows where <code>channel</code> is <code>'Phone'</code>. How many of these requests are there for each value of <code>district</code>?<br><br>Show the district and its count, with the largest count first. Name the count column <code>request_count</code>.",
+   starter: 'SELECT ____, COUNT(*) AS request_count\nFROM requests\nWHERE channel = \'Phone\'\nGROUP BY ____\nORDER BY request_count ____, district ASC;',
+   answer: 'SELECT district, COUNT(*) AS request_count\nFROM requests\nWHERE channel = \'Phone\'\nGROUP BY district\nORDER BY request_count DESC, district ASC;', ordered: {column: 'request_count', direction: 'desc'},
+   wrong: 'Some values differ. Count the rows in each group with COUNT(*), and keep only the Phone requests with WHERE.',
+   pyStart: '(\n    requests[requests["channel"] == "Phone"]\n    .groupby("____", dropna=False)\n    .size()\n    .reset_index(name="request_count")\n    .sort_values(["request_count", "district"], ascending=[____, True])\n)',
+   rStart: 'requests |>\n  filter(channel == "Phone") |>\n  count(____, name = "request_count") |>\n  arrange(____(request_count), district)',
+   py: '(\n    requests[requests["channel"] == "Phone"]\n    .groupby("district", dropna=False)\n    .size()\n    .reset_index(name="request_count")\n    .sort_values(["request_count", "district"], ascending=[False, True])\n)',
+   r: 'requests |>\n  filter(channel == "Phone") |>\n  count(district, name = "request_count") |>\n  arrange(desc(request_count), district)',
+   hint: 'You want one row per district, so <code>district</code> goes after both <code>SELECT</code> and <code>GROUP BY</code>. <code>DESC</code> sorts largest first.',
+   after: 'One row has no district: 81 Phone requests whose district is missing. SQL keeps that group, and so does R. Pandas drops it unless you add <code>dropna=False</code>.'},
+  {topic: 'Find missing values',
+   intro: 'SQL calls a missing value <code>NULL</code>. Test for it with <code>IS NULL</code>.',
+   example: {sql: 'SELECT COUNT(*) AS missing_time\nFROM requests\nWHERE hours_to_close IS NULL;',
+             pandas: 'requests["hours_to_close"].isna().sum()',
+             r: 'sum(is.na(requests$hours_to_close))'},
+   task: "How many rows in the <code>requests</code> table have a missing value in the <code>district</code> column? Show a single count.",
+   starter: 'SELECT COUNT(*) AS request_count\nFROM requests\nWHERE district ____;',
+   answer: 'SELECT COUNT(*) AS request_count\nFROM requests\nWHERE district IS NULL;', ordered: false,
+   wrong: 'The number differs. Test for a missing value with IS NULL, and count the rows with COUNT(*).',
+   pyStart: 'requests["district"].____().sum()',
+   rStart: 'sum(____(requests$district))',
+   py: 'requests["district"].isna().sum()',
+   r: 'sum(is.na(requests$district))',
+   hint: 'The blank is <code>IS NULL</code>.',
+   after: 'Now change <code>IS NULL</code> to <code>= NULL</code> and run it. The count is 0: comparing with <code>NULL</code> gives an unknown result, and <code>WHERE</code> keeps only true conditions. Use <code>IS NULL</code> to test for missing values.'},
+  {topic: 'Count, add up and average',
+   intro: '<code>COUNT(*)</code> counts rows. <code>COUNT(column)</code> counts recorded values, including zero. <code>SUM(column)</code> adds up recorded values and <code>AVG(column)</code> averages them. <code>COUNT(*)</code> includes every row. <code>COUNT(column)</code>, <code>SUM(column)</code>, and <code>AVG(column)</code> ignore missing values.',
+   example: {sql: 'SELECT COUNT(*) AS request_count,\n       COUNT(hours_to_close) AS with_time,\n       AVG(hours_to_close) AS mean_hours\nFROM requests;',
+             pandas: 'len(requests)\nrequests["hours_to_close"].count()\nrequests["hours_to_close"].mean()',
+             r: 'nrow(requests)\nsum(!is.na(requests$hours_to_close))\nmean(requests$hours_to_close, na.rm = TRUE)'},
+   task: "In the <code>requests</code> table, the <code>is_open</code> column contains 1 for an open request and 0 for a closed request.<br><br>Show the number of open requests and their proportion of all requests, between 0 and 1. Your result should have one row with these two values.",
+   starter: 'SELECT ____(is_open) AS open_requests,\n       ____(is_open) AS share_open\nFROM requests;',
+   answer: 'SELECT SUM(is_open) AS open_requests,\n       AVG(is_open) AS share_open\nFROM requests;', ordered: false,
+   accept: mine => { if (mine.values.length !== 1 || mine.columns.length !== 2) return false;
+     const [open, share] = run('SELECT SUM(is_open), AVG(is_open) FROM requests').values[0], v = mine.values[0];
+     return [[0, 1], [1, 0]].some(([n, p]) => v[n] === open && (Math.abs(parseFloat(v[p]) - share) < 0.005 || Math.abs(parseFloat(v[p]) - 100 * share) < 0.5)); },
+   wrong: 'Some values differ. SUM(is_open) adds up the 1s and AVG(is_open) gives their share. COUNT counts the 0s too, and dividing one whole number by another gives a whole number.',
+   pyStart: 'requests["is_open"].____(), requests["is_open"].____()',
+   rStart: '____(requests$is_open)\n____(requests$is_open)',
+   py: 'requests["is_open"].sum(), requests["is_open"].mean()',
+   r: 'sum(requests$is_open)\nmean(requests$is_open)',
+   hint: '<code>SUM(is_open)</code> adds up the 1s. <code>AVG(is_open)</code> divides that sum by the number of requests.',
+   after: 'Because <code>is_open</code> is 1 or 0, its sum is a count and its average is a share: 1,113 open requests, about 7% of all requests.'},
+  {topic: 'Join two tables',
+   intro: 'A join matches rows from two tables on a shared column. <code>LEFT JOIN</code> keeps every row of the first table, even when nothing matches. <code>r</code> and <code>d</code> are short names for the two tables.',
+   example: {pandas: 'requests.merge(districts, on="district", how="left")',
+             r: 'requests |>\n  left_join(districts, by = "district")'},
+   task: "Add <code>district_name</code> from the <code>districts</code> table to the records in <code>requests</code>, matching the <code>district</code> values in both tables. Include every request, even when there is no matching district.<br><br>Show <code>request_id</code>, <code>category</code>, and <code>district</code> from <code>requests</code>, plus <code>district_name</code> from <code>districts</code>. Sort by <code>request_id</code> from smallest to largest.",
+   starter: 'SELECT r.request_id, r.category, r.district, d.district_name\nFROM requests AS r\nLEFT JOIN districts AS d\n    ON r.____ = d.____\nORDER BY r.request_id;',
+   answer: 'SELECT r.request_id, r.category, r.district, d.district_name\nFROM requests AS r\nLEFT JOIN districts AS d\n    ON r.district = d.district\nORDER BY r.request_id;', ordered: true,
+   wrong: 'Some values differ. Match the district number in requests with the district number in districts.',
+   pyStart: '(\n    requests[["request_id", "category", "district"]]\n    .merge(districts, on="____", how="left")\n    .sort_values("request_id")\n)',
+   rStart: 'requests |>\n  select(request_id, category, district) |>\n  left_join(districts, by = "____") |>\n  arrange(request_id)',
+   py: '(\n    requests[["request_id", "category", "district"]]\n    .merge(districts, on="district", how="left")\n    .sort_values("request_id")\n)',
+   r: 'requests |>\n  select(request_id, category, district) |>\n  left_join(districts, by = "district") |>\n  arrange(request_id)',
+   hint: 'Both tables call the shared column <code>district</code>.',
+   after: 'The result has 16,865 rows, one per request. <code>LEFT JOIN</code> keeps every request, and each district matches at most one lookup row. If a district appeared twice in the lookup, its requests would appear twice too.'},
+  {topic: 'Join, then group',
+   intro: 'The join is part of <code>FROM</code>, so <code>WHERE</code>, <code>GROUP BY</code> and <code>ORDER BY</code> come after it. After a left join, a row with no match has <code>NULL</code> in the columns that come from the second table.',
+   task: "Using the <code>requests</code> and <code>districts</code> tables, count the requests for each <code>district_name</code>. Include requests without a matching district as a group with a missing name.<br><br>Show each name and its count, with the largest count first. Name the count column <code>request_count</code>. Write the whole query.",
+   starter: '',
+   scaffold: 'SELECT d.district_name, COUNT(*) AS request_count\nFROM requests AS r\nLEFT JOIN districts AS d\n    ON r.district = d.district\nGROUP BY ____\nORDER BY ____;',
+   answer: 'SELECT d.district_name, COUNT(*) AS request_count\nFROM requests AS r\nLEFT JOIN districts AS d\n    ON r.district = d.district\nGROUP BY d.district_name\nORDER BY request_count DESC;', ordered: {column: 'request_count', direction: 'desc'},
+   wrong: 'Some values differ. Show the name from districts, and count rows with COUNT(*). Counting a column from districts skips the requests that have no match.',
+   pyStart: 'joined = requests.merge(districts, on="district", how="left")\njoined.groupby("____", dropna=False).size().sort_values(ascending=____)',
+   rStart: 'requests |>\n  left_join(districts, by = "district") |>\n  count(____) |>\n  arrange(desc(n))',
+   py: 'joined = requests.merge(districts, on="district", how="left")\njoined.groupby("district_name", dropna=False).size().sort_values(ascending=False)',
+   r: 'requests |>\n  left_join(districts, by = "district") |>\n  count(district_name) |>\n  arrange(desc(n))',
+   hint: 'Use <code>LEFT JOIN</code> to keep every request, then group by <code>d.district_name</code> and count rows with <code>COUNT(*)</code>. The join can start like this:<pre>FROM requests AS r\nLEFT JOIN districts AS d\n    ON r.district = d.district</pre>For more help, put the fuller starting point in the box below.',
+   after: 'One row has no name: the 110 requests with no district, which match nothing in <code>districts</code>. The counts add up to 16,865, so the join kept every request.'},
+  {topic: 'Now work in pairs in DuckDB', handoff: true,
+   intro: 'The SQL practice ends here. Work in pairs on the food-access investigation in DuckDB. The new tables are <code>tracts</code> and <code>counties</code>; the activity instructions explain their columns.'},
+  {topic: 'The city’s live 311 table', outside: true, extra: true}
+];
+
+// The city's live 311 table on DataSF. The query goes in the web address.
+const DATASF_QUERY = "SELECT source, count(*) AS request_count\nWHERE requested_datetime >= '2026-08-03'\n  AND requested_datetime < '2026-08-10'\nGROUP BY source\nORDER BY request_count DESC";
+const DATASF_URL = 'https://data.sf.gov/resource/vw6y-z8j6.json?$query=' + encodeURIComponent(DATASF_QUERY.replace(/\s+/g, ' '));
+// The same two tables in the DuckDB web shell, loaded from the course's CSV files on GitHub.
+const CSV_BASE = 'https://raw.githubusercontent.com/macss-berkeley/compss-211a/main/data/';
+const DUCK_SETUP = [
+  `CREATE TABLE requests AS SELECT * FROM read_csv('${CSV_BASE}sf311_requests.csv', types={'request_id': 'VARCHAR'}) WHERE channel IS DISTINCT FROM 'Test'`,
+  `CREATE TABLE districts AS SELECT sup_dist AS district, sup_dist_name AS district_name FROM '${CSV_BASE}sf_supervisor_districts.csv'`,
+];
+// The fallback for the paired activity: the DuckDB web shell with the tracts and counties tables loaded.
+const FOOD_FALLBACK = "https://shell.duckdb.org/#queries=v0,CREATE-TABLE-tracts-AS-SELECT-*-FROM-'https%3A%2F%2Fraw.githubusercontent.com%2Fmacss%20berkeley%2Fcompss%20211a%2Fmain%2Fdata%2Fweek05_food_access_tracts.csv'~,CREATE-TABLE-counties-AS-SELECT-*-FROM-'https%3A%2F%2Fraw.githubusercontent.com%2Fmacss%20berkeley%2Fcompss%20211a%2Fmain%2Fdata%2Fweek05_ca_counties.csv'~,SHOW-TABLES~";
+// The shell reads its queries from the address. In its format a space is written as -, a hyphen as a space, and ; as ~.
+function duckLink(queries) {
+  const swap = {' ': '-', '-': ' ', ';': '~', '~': ';'};
+  const part = text => encodeURIComponent((text.replace(/\s+/g, ' ').trim() + ';').replace(/[ \-;~]/g, c => swap[c]));
+  return 'https://shell.duckdb.org/#queries=v0,' + [...DUCK_SETUP, ...queries].map(part).join(',');
+}
+// Split a box of SQL into its statements, at semicolons outside quotes. Comments are removed.
+function statements(text) {
+  const clean = text.replace(/--[^\n]*/g, ''), flat = mask(clean, false), out = [];
+  let last = 0;
+  for (let i = 0; i <= flat.length; i++) if (i === flat.length || flat[i] === ';') { const st = clean.slice(last, i).trim(); if (st) out.push(st); last = i + 1; }
+  return out;
+}
+// The Python and R tabs load the same two files and make tables with the same names.
+const FILES = {};
+const PY_SETUP = [
+  'import pandas as pd',
+  'import numpy as np',
+  'np.set_printoptions(legacy="1.25")  # show a count as 110, not np.int64(110)',
+  'pd.set_option("display.width", 200)',
+  'pd.set_option("display.max_columns", 20)',
+  'raw = pd.read_csv("sf311_requests.csv", dtype={"request_id": "string", "district": "Int64"})',
+  'requests = raw[raw["channel"] != "Test"].copy()',
+  'requests["is_open"] = (requests["status"] == "Open").astype(int)',
+  'districts = pd.read_csv("sf_supervisor_districts.csv")',
+  'districts = districts.rename(columns={"sup_dist": "district", "sup_dist_name": "district_name"})[["district", "district_name"]]',
+].join('\n');
+const R_SETUP = [
+  'setwd("/home/web_user")',
+  'suppressPackageStartupMessages(library(dplyr))',
+  'options(width = 110)',
+  'raw <- read.csv("sf311_requests.csv", colClasses = c(request_id = "character"), na.strings = "")',
+  'requests <- as_tibble(raw[is.na(raw$channel) | raw$channel != "Test", ]) |> mutate(is_open = as.integer(status == "Open"))',
+  'districts <- read.csv("sf_supervisor_districts.csv") |> transmute(district = sup_dist, district_name = sup_dist_name) |> as_tibble()',
+  'rm(raw)',
+  '.week05 <- list(requests = requests, districts = districts)  # the tables as loaded',
+].join('\n');
+const WEBR_URL = 'https://webr.r-wasm.org/v0.6.0/webr.mjs';
+
+const STORE = 'compss211a-week05-sql-workspace-oct5d';
+let SQL = null, db = null, current = 0;
+const solved = new Set();
+// tried: steps where a checked answer was wrong. ranTab: Python and R tabs where the student ran code, as 'py:3'.
+const tried = new Set(), ranTab = new Set();
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+// Split one CSV file into rows of text. Handles quoted fields.
+function parseCSV(text) {
+  const rows = []; let row = [], field = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else field += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { row.push(field); field = ''; }
+    else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (ch !== '\r') field += ch;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+async function loadTables() {
+  for (const table of TABLES) {
+    const response = await fetch('data/week05/' + table.file);
+    if (!response.ok) throw new Error('Could not load ' + table.file);
+    const text = await response.text();
+    FILES[table.file] = text;
+    const [header, ...rows] = parseCSV(text);
+    const position = table.columns.map(([name, , source]) => typeof source === 'function' ? null : header.indexOf(source || name));
+    if (position.includes(-1)) throw new Error('Unexpected columns in ' + table.file);
+    db.run(`CREATE TABLE ${table.name} (${table.columns.map(([name, type]) => name + ' ' + type).join(', ')})`);
+    const insert = db.prepare(`INSERT INTO ${table.name} VALUES (${table.columns.map(() => '?').join(',')})`);
+    db.run('BEGIN');
+    table.rows = 0;
+    for (const row of rows) {
+      if (row.length < header.length) continue;
+      const record = Object.fromEntries(header.map((h, i) => [h, row[i]]));
+      if (table.keep && !table.keep(record)) continue;
+      // An empty field is a missing value. Numbers are stored as numbers, everything else as text.
+      insert.run(table.columns.map(([, type, source], i) => {
+        if (typeof source === 'function') return source(record);
+        const v = row[position[i]];
+        return v === '' ? null : type === 'TEXT' ? v : Number(v);
+      }));
+      table.rows++;
+    }
+    db.run('COMMIT');
+    insert.free();
+  }
+}
+
+// R runs in the browser through WebR. It loads only when a student opens an R tab.
+let webRPromise = null;
+function getR(onStatus) {
+  if (!webRPromise) {
+    webRPromise = (async () => {
+      onStatus('Loading R (only the first time)…');
+      const mod = await import(WEBR_URL);
+      const webR = new mod.WebR({channelType: mod.ChannelType.PostMessage});
+      await webR.init();
+      onStatus('Loading dplyr (only the first time)…');
+      await webR.installPackages(['dplyr'], {quiet: true});
+      const encoder = new TextEncoder();
+      for (const [name, text] of Object.entries(FILES)) await webR.FS.writeFile('/home/web_user/' + name, encoder.encode(text));
+      await webR.evalRVoid(R_SETUP);
+      return webR;
+    })();
+    webRPromise.catch(() => { webRPromise = null; });
+  }
+  return webRPromise;
+}
+function rCell(el, starter, pre) {
+  el.classList.add('sbx');
+  el.innerHTML = `
+    <div class="sbx-bar"><span class="sbx-label">R · runs in your browser</span>
+      <span class="sbx-actions"><button type="button" class="sbx-run">Run ▶</button><button type="button" class="sbx-reset">Reset</button></span></div>
+    <textarea class="sbx-code" spellcheck="false" aria-label="R code"></textarea>
+    <div class="sbx-status" aria-live="polite"></div>
+    <pre class="sbx-out" aria-live="polite" tabindex="0"></pre>`;
+  const code = el.querySelector('.sbx-code'), out = el.querySelector('.sbx-out'), status = el.querySelector('.sbx-status'), runBtn = el.querySelector('.sbx-run');
+  code.value = starter;
+  const setStatus = text => { status.textContent = text; };
+  async function runR() {
+    runBtn.disabled = true;
+    out.innerHTML = '';
+    try {
+      const webR = await getR(setStatus);
+      setStatus('Running…');
+      // Every run starts from the tables as loaded, so a line such as requests <- head(requests) in one box does not change the others.
+      await webR.evalRVoid('requests <- .week05$requests; districts <- .week05$districts');
+      if (pre) await webR.evalRVoid(pre);
+      const shelter = await new webR.Shelter();
+      try {
+        const result = await shelter.captureR(code.value, {withAutoprint: true, captureStreams: true, captureConditions: false});
+        out.innerHTML = result.output.map(o => o.type === 'stderr' ? `<span class="sbx-err">${esc(o.data)}</span>` : esc(o.data)).join('\n') || '<span class="sbx-dim">(no output)</span>';
+      } finally { shelter.purge(); }
+      setStatus('');
+    } catch (error) {
+      setStatus(error.message && /import|fetch|load/i.test(error.message) ? 'R could not load. This tab needs an internet connection.' : (error.message || String(error)));
+    } finally { runBtn.disabled = false; }
+  }
+  runBtn.addEventListener('click', runR);
+  code.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey || e.shiftKey) && e.key === 'Enter') { e.preventDefault(); runR(); }
+    if (e.key === 'Tab') { e.preventDefault(); const at = code.selectionStart; code.setRangeText('  ', at, code.selectionEnd, 'end'); }
+  });
+  el.querySelector('.sbx-reset').addEventListener('click', () => { code.value = starter; out.innerHTML = ''; setStatus(''); });
+}
+
+// Build a step's Python or R box the first time its tab is opened.
+function openTab(i, tab) {
+  for (const name of ['sql', 'py', 'r']) {
+    $(`s${i}-panel-${name}`).hidden = name !== tab;
+    document.querySelector(`[data-tab="${name}"][data-q="${i}"]`).setAttribute('aria-selected', String(name === tab));
+  }
+  const box = tab === 'sql' ? null : $(`s${i}-${tab}`);
+  if (!box || box.dataset.ready) return;
+  box.dataset.ready = '1';
+  // pyPre and rPre make the tables from earlier pipeline steps, so each step's box can run on its own.
+  if (tab === 'py') Sandbox.python(box, {packages: ['pandas'], root: `/home/you/week05-step${i + 1}`, files: FILES, setup: PY_SETUP + '\n' + (STEPS[i].pyPre || ''), code: STEPS[i].pyStart});
+  else rCell(box, STEPS[i].rStart, STEPS[i].rPre);
+  guardBlanks(box);
+  const ran = () => { if (box.querySelector('.sbx-code').value.trim()) { ranTab.add(tab + ':' + i); showAnswers(); } };
+  box.addEventListener('click', e => { if (e.target.closest('.sbx-run')) ran(); });
+  box.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey || e.shiftKey) && e.key === 'Enter') ran(); });
+}
+// An answer can be opened once the student has tried: a checked SQL answer that was wrong, or code run in the Python or R tab.
+// A solved step shows all three.
+function showAnswers() {
+  STEPS.forEach((s, n) => {
+    if (!s.answer) return;
+    for (const [id, open] of [['answer', tried.has(n)], ['py-answer', ranTab.has('py:' + n)], ['r-answer', ranTab.has('r:' + n)]]) {
+      $(`s${n}-${id}`).hidden = !(open || solved.has(n));
+      $(`s${n}-${id}-wait`).hidden = open || solved.has(n);
+    }
+  });
+}
+// Stop a run while the code still has blanks, as the SQL tab does.
+function guardBlanks(box) {
+  const stop = e => {
+    if (!box.querySelector('.sbx-code').value.includes('____')) return;
+    e.stopPropagation();
+    e.preventDefault();
+    box.querySelector('.sbx-out').innerHTML = '';
+    box.querySelector('.sbx-status').textContent = 'Replace every ____ first.';
+  };
+  box.addEventListener('click', e => { if (e.target.closest('.sbx-run')) stop(e); }, true);
+  box.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey || e.shiftKey) && e.key === 'Enter') stop(e); }, true);
+}
+
+function renderSchema() {
+  const views = db.exec(`SELECT name, type FROM sqlite_master WHERE type IN ('view', 'table') AND name NOT IN (${TABLES.map(t => `'${t.name}'`).join(', ')}) ORDER BY name`)[0];
+  const viewList = (views ? views.values.map(([name, type]) => {
+    let columns = [];
+    try { const st = db.prepare(`SELECT * FROM ${name} LIMIT 0`); columns = st.getColumnNames(); st.free(); } catch (error) { /* a view whose tables are gone */ }
+    return `<h3><button type="button" class="name" data-name="${name}">${name}</button></h3><p class="small">A ${type} you made.</p><ul>${columns.map(c => `<li><button type="button" class="name" data-name="${c}">${c}</button></li>`).join('')}</ul>`;
+  }) : []).join('');
+  $('schema').innerHTML = TABLES.map(t => `<h3><button type="button" class="name" data-name="${t.name}">${t.name}</button></h3><p class="small">${t.rows.toLocaleString('en-US')} rows. ${esc(t.note)}</p><ul>${t.columns.map(([name]) => `<li><button type="button" class="name" data-name="${name}">${name}</button></li>`).join('')}</ul>`).join('') + viewList;
+}
+// After a query that makes or removes a view or a table, list them again.
+const changesViews = query => /\b(create|drop)\b/i.test(query);
+
+function runScratch() {
+  const fb = $('scratch-fb'), out = $('scratch-out'), query = $('scratch').value.trim();
+  if (!query) return;
+  try { out.innerHTML = renderOutput(query, run(query)); fb.className = 'feedback'; if (changesViews(query)) renderSchema(); }
+  catch (error) { setFeedback(fb, 'bad', explainError(error.message)); out.innerHTML = ''; }
+  save();
+}
+
+// The query without comments, and with the text in single quotes emptied.
+const bare = query => query.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/'(?:[^']|'')*'/g, "''");
+// The page's own tables are for reading. A statement that would change or remove one is stopped before it runs.
+const CHANGES_LOADED = new RegExp('\\b(?:insert(?:\\s+or\\s+\\w+)?\\s+into|replace\\s+into|update(?:\\s+or\\s+\\w+)?|delete\\s+from|drop\\s+table(?:\\s+if\\s+exists)?|alter\\s+table)\\s+(?:main\\s*\\.\\s*)?["`\\[]?(' + TABLES.map(t => t.name).join('|') + ')\\b', 'i');
+// SQLite reads "Web" as text when no table or column has that name. DuckDB and most other databases give an error, so the page does too.
+// A name in double quotes after AS, a bracket or another name is a label for a column, and is left alone.
+const BEFORE_VALUE = /^(?:select|distinct|where|and|or|not|like|glob|in|is|then|else|when|case|between|by|having|on)$/i;
+function doubleQuotedText(query) {
+  const text = bare(query);
+  let names = null;
+  for (const m of text.matchAll(/"([^"]*)"/g)) {
+    const word = (text.slice(0, m.index).match(/(\w+|\))\s*$/) || [])[1];
+    if (word && !BEFORE_VALUE.test(word)) continue;
+    if (!names) {
+      names = new Set([...text.matchAll(/\bas\s+"?(\w+)/gi)].map(a => a[1].toLowerCase()));
+      const made = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table', 'view')")[0];
+      for (const [name] of made ? made.values : []) {
+        names.add(name.toLowerCase());
+        try { const st = db.prepare(`SELECT * FROM "${name}" LIMIT 0`); st.getColumnNames().forEach(c => names.add(c.toLowerCase())); st.free(); } catch (error) { /* a view whose tables are gone */ }
+      }
+    }
+    if (!names.has(m[1].toLowerCase())) return m[1];
+  }
+  return null;
+}
+function run(query) {
+  const target = bare(query).match(CHANGES_LOADED);
+  if (target) throw new Error('read-only: ' + target[1].toLowerCase());
+  const text = doubleQuotedText(query);
+  if (text !== null) throw new Error('double-quoted text: ' + text);
+  const results = db.exec(query);
+  // statement: the last statement makes or changes something, so it has no rows to show.
+  if (!results.length) return {columns: [], values: [], statement: /^\s*(create|drop|insert|replace|update|delete|alter)\b/i.test(statements(query).pop() || '')};
+  return results[results.length - 1];
+}
+
+const shown = v => typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 10000) / 10000 : v;
+function renderTable(result) {
+  if (!result.columns.length) return `<p class="small">${result.statement ? 'Done. This statement returns no rows.' : 'The query ran but returned no rows.'}</p>`;
+  const rows = result.values.slice(0, 50);
+  const head = result.columns.map(c => `<th>${esc(c)}</th>`).join('');
+  const cell = v => v === null ? '<td class="null">NULL</td>' : `<td>${esc(shown(v))}</td>`;
+  const body = rows.map(r => '<tr>' + r.map(cell).join('') + '</tr>').join('');
+  const count = result.values.length.toLocaleString('en-US');
+  const more = result.values.length > rows.length ? `<p class="small">Showing 50 of ${count} rows.</p>` : `<p class="small">${count} row${result.values.length === 1 ? '' : 's'}.</p>`;
+  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>${more}`;
+}
+
+// Replace quoted text with spaces, and with brackets = true also everything inside brackets.
+// Keywords found in the masked text are then real keywords at the top level of the query.
+function mask(text, brackets) {
+  let out = '', quote = null, depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) { out += ' '; if (ch === quote) quote = null; }
+    else if (ch === "'" || ch === '"') { quote = ch; out += ' '; }
+    else if (brackets && ch === '(') { out += depth++ ? ' ' : ch; }
+    else if (brackets && ch === ')') { out += --depth > 0 ? ' ' : ch; }
+    else out += depth > 0 ? ' ' : ch;
+  }
+  return out;
+}
+// Split a simple query into its parts. Returns null for a query this page cannot split:
+// a subquery, more than one statement, or parts in an unexpected order.
+const PARTS = [['select', /\bselect\b/gi], ['from', /\bfrom\b/gi], ['where', /\bwhere\b/gi], ['group', /\bgroup\s+by\b/gi], ['having', /\bhaving\b/gi], ['order', /\border\s+by\b/gi], ['limit', /\blimit\b/gi]];
+function splitQuery(query) {
+  const text = query.replace(/--[^\n]*/g, '').trim().replace(/;\s*$/, '');
+  const flat = mask(text, false), top = mask(text, true);
+  if (flat.includes(';') || (flat.match(/\bselect\b/gi) || []).length !== 1 || /\b(union|intersect|except|with)\b/i.test(top)) return null;
+  const found = [];
+  for (const [name, pattern] of PARTS) {
+    const hits = [...top.matchAll(pattern)];
+    if (hits.length > 1) return null;
+    if (hits.length) found.push({name, at: hits[0].index, end: hits[0].index + hits[0][0].length});
+  }
+  if (!found.length || found[0].name !== 'select' || found[0].at !== 0 || !found.some(f => f.name === 'from')) return null;
+  if (found.some((f, n) => n && f.at < found[n - 1].at)) return null;
+  const q = {};
+  found.forEach((f, n) => { q[f.name] = text.slice(f.end, n + 1 < found.length ? found[n + 1].at : text.length).trim(); });
+  if (!q.select || !q.from) return null;
+  // The FROM part: the first table, then one piece per JOIN.
+  const fromTop = mask(q.from, true);
+  const cuts = [...fromTop.matchAll(/\b(?:(?:left|right|full|inner|cross|natural)\s+(?:outer\s+)?)?join\b/gi)].map(m => m.index);
+  q.tables = [0, ...cuts].map((at, n, all) => q.from.slice(at, n + 1 < all.length ? all[n + 1] : q.from.length).trim());
+  // The items of the SELECT list, split at top-level commas.
+  const selectTop = mask(q.select, true);
+  q.items = []; let last = 0;
+  for (let i = 0; i <= selectTop.length; i++) if (i === selectTop.length || selectTop[i] === ',') { q.items.push(q.select.slice(last, i).trim()); last = i + 1; }
+  return q;
+}
+// The size of the table after each part of a query, in the order SQL runs the parts.
+// Returns null for a plain look at one table, which has nothing to show.
+// Returns null when the query cannot be split, or when the sizes do not add up to the result.
+function queryShape(query, result) {
+  const q = splitQuery(query);
+  if (!q) return null;
+  const plainLook = q.tables.length === 1 && !q.where && !q.group;  // nothing that keeps, drops or groups rows
+  const count = sql => db.exec(sql)[0].values[0][0];
+  const width = sql => { const st = db.prepare(sql); const n = st.getColumnNames().length; st.free(); return n; };
+  const one = text => text.replace(/\s+/g, ' ');
+  const stages = [];
+  let from = '';
+  q.tables.forEach((piece, n) => {
+    from = (from + ' ' + piece).trim();
+    const stage = {part: (n ? '' : 'FROM ') + one(piece), label: n ? one(piece).match(/^(.*?\bjoin\s+\w+)/i)[1] : 'FROM ' + piece.split(/\s/)[0], rows: count(`SELECT COUNT(*) FROM ${from}`), columns: width(`SELECT * FROM ${from}`)};
+    const join = n && piece.match(/^(\w+\s+)*join\s+(\w+)(?:\s+(?:as\s+)?(\w+))?/i);
+    if (join) {
+      const table = join[2], short = join[3] && !/^on$/i.test(join[3]) ? join[3] : table;
+      if (/^left\b/i.test(piece)) {
+        let unmatched = 0;
+        try { unmatched = count(`SELECT COUNT(*) FROM ${from} WHERE ${short}.rowid IS NULL`); } catch (error) { /* no note */ }
+        if (unmatched) stage.note = `Some rows have no match in ${table}.`;  // no count: counting them is a task
+      }
+      if (stage.rows > stages[n - 1].rows) stage.note = `More rows than before the join. Some rows matched more than one row of ${table}.`;
+    }
+    stages.push(stage);
+  });
+  const where = q.where ? ` WHERE ${q.where}` : '', group = q.group ? ` GROUP BY ${q.group}` : '';
+  if (q.where) stages.push({label: 'WHERE', part: 'WHERE ' + one(q.where), rows: count(`SELECT COUNT(*) FROM ${from}${where}`), columns: stages[stages.length - 1].columns});
+  const selected = `SELECT ${q.select} FROM ${from}${where}${group}`;
+  if (q.group) stages.push({label: 'GROUP BY', part: 'GROUP BY ' + one(q.group), rows: count(`SELECT COUNT(*) FROM (${selected})`), groups: true});
+  const kept = selected + (q.having ? ` HAVING ${q.having}` : '');
+  if (q.having) stages.push({label: 'HAVING', part: 'HAVING ' + one(q.having), rows: count(`SELECT COUNT(*) FROM (${kept})`), groups: true});
+  const columns = width(query.replace(/--[^\n]*/g, '').trim().replace(/;\s*$/, ''));
+  stages.push({label: /^distinct\b/i.test(q.select) ? 'SELECT DISTINCT' : 'SELECT', part: 'SELECT ' + one(q.select), rows: count(`SELECT COUNT(*) FROM (${kept})`), columns});
+  if (q.order) stages.push({label: 'ORDER BY', part: 'ORDER BY ' + one(q.order), rows: stages[stages.length - 1].rows, columns});
+  if (q.limit) stages.push({label: 'LIMIT', part: 'LIMIT ' + one(q.limit), rows: result.values.length, columns});
+  if (stages[stages.length - 1].rows !== result.values.length) return null;
+  return plainLook ? null : stages;
+}
+// One line under the query: the number of rows after each part that changes them, in the order SQL runs the parts.
+// Joins are always shown, so a join that keeps the row count is visible too.
+function renderShape(stages) {
+  const number = v => v.toLocaleString('en-US');
+  const kept = stages.filter((st, n) => n === 0 || /join/i.test(st.label) || st.groups || st.rows !== stages[n - 1].rows);
+  const parts = kept.map(st => `<code>${esc(st.label)}</code> <b>${number(st.rows)}</b>${st.groups ? (st.rows === 1 ? ' group' : ' groups') : ''}${st.note ? ` (${esc(st.note[0].toLowerCase() + st.note.slice(1).replace(/\.$/, ''))})` : ''}`);
+  return `<p class="trail">Rows after each part: ${parts.join(' → ')}</p>`;
+}
+// What is shown under a query: the size after each part (when the query can be split), then the result.
+function renderOutput(query, result) {
+  let shape = null;
+  try { shape = queryShape(statements(query).pop() || '', result); } catch (error) { /* show the result alone */ }
+  return (shape ? renderShape(shape) : '') + `<div class="result">${renderTable(result)}</div>`;
+}
+
+// Say an SQLite error in plain words. The original message is shown after it.
+function distance(a, b) {
+  const row = [...Array(b.length + 1).keys()];
+  for (let i = 1; i <= a.length; i++) {
+    let before = row[0]; row[0] = i;
+    for (let j = 1; j <= b.length; j++) { const keep = row[j]; row[j] = Math.min(row[j] + 1, row[j - 1] + 1, before + (a[i - 1] === b[j - 1] ? 0 : 1)); before = keep; }
+  }
+  return row[b.length];
+}
+function closest(word, names) {
+  const w = word.toLowerCase();
+  const near = [...new Set(names)].map(name => [distance(w, name.toLowerCase()), name]).filter(([d]) => d > 0 && d <= 2 && d < w.length / 2).sort((a, b) => a[0] - b[0]);
+  return near.length ? near[0][1] : null;
+}
+function explainError(message) {
+  const tables = TABLES.map(t => t.name), columns = TABLES.flatMap(t => t.columns.map(c => c[0]));
+  const owners = name => TABLES.filter(t => t.columns.some(c => c[0] === name)).map(t => t.name);
+  let m, plain = '';
+  if ((m = message.match(/^read-only: (\w+)$/))) return esc(`${m[1]} is one of this page's tables, and the page only reads them. To try INSERT, UPDATE or DELETE, make your own table with CREATE TABLE first.`);
+  if ((m = message.match(/^double-quoted text: ([\s\S]*)$/))) return esc(`Put text in single quotes: '${m[1]}'. Double quotes are for table and column names. DuckDB and most other databases give an error here.`);
+  if ((m = message.match(/^no such column: (.+)$/))) {
+    const full = m[1], word = full.split('.').pop(), near = closest(word, columns);
+    if (full.includes('.') && !columns.includes(word) && near) plain = `There is no column called ${word}. Did you mean ${near}?`;
+    else if (full.includes('.')) plain = `SQL could not find ${full}. Check that ${full.split('.')[0]} is the name or short name of a table in this query, and that the table has a column called ${word}.`;
+    else if (owners(word).length) plain = `${word} is a column of ${owners(word).join(' and ')}, and that table is not in this query.`;
+    else if (near) plain = `There is no column called ${word}. Did you mean ${near}?`;
+    else plain = `There is no column called ${word}. If ${word} is text, put it in single quotes: '${word}'.`;
+  } else if ((m = message.match(/^(?:view|table) (\w+) already exists$/))) {
+    plain = `${m[1]} already exists. Start with DROP VIEW IF EXISTS ${m[1]}; to replace it.`;
+  } else if ((m = message.match(/^no such table: (?:main\.)?(.+)$/)) && STEPS.some(s => s.view === m[1])) {
+    plain = `${m[1]} is a view that an earlier step makes. Do that step first.`;
+  } else if ((m = message.match(/^no such table: (?:main\.)?(.+)$/))) {
+    const near = closest(m[1], tables);
+    plain = `There is no table called ${m[1]}. ${near ? `Did you mean ${near}?` : `The tables are ${tables.join(', ')}.`}`;
+  } else if ((m = message.match(/^ambiguous column name: (.+)$/))) {
+    const word = m[1].split('.').pop();
+    plain = `More than one table in this query has a column called ${word}. Put the table's name or short name before it, for example ${(owners(word)[0] || 'requests')}.${word}.`;
+  } else if ((m = message.match(/^near "(.+)": syntax error$/))) {
+    plain = /^from$/i.test(m[1]) ? 'SQL could not read the query at FROM. Look just before it for a comma after the last column, or a bracket that is not closed.'
+      : `SQL could not read the query at ${m[1]}. Check ${m[1]} and the part just before it for a misspelt keyword, or a missing or extra comma.`;
+  } else if (/^incomplete input$/.test(message)) {
+    plain = 'The query ends too early. Something is missing at the end.';
+  } else if ((m = message.match(/^unrecognized token: "(['"])/))) {
+    plain = 'A quotation mark is not closed.';
+  }
+  return plain ? `${esc(plain)} <span class="small">SQLite’s message: ${esc(message)}</span>` : `SQL error: ${esc(message)}`;
+}
+
+// Clicking a table or column name puts it into the code box that is open.
+// It fills the next blank if the box has one and the student has not moved the cursor; otherwise it goes where the cursor is.
+// Two names clicked one after the other are separated by a comma.
+let lastBox = null;
+for (const type of ['focusin', 'pointerdown', 'input']) document.addEventListener(type, e => { if (e.target.matches && e.target.matches('textarea')) lastBox = e.target; });
+function insertName(name) {
+  const open = [...$(`s${current}`).querySelectorAll('textarea'), $('scratch')].filter(t => t.offsetParent !== null);
+  const box = open.includes(lastBox) ? lastBox : open[0];
+  if (!box) return;
+  const text = box.value;
+  let start = box.selectionStart, end = box.selectionEnd;
+  const untouched = box !== lastBox || (start === end && String(start) === box.dataset.inserted);
+  if (start === end) {
+    // A cursor inside or next to a blank replaces that blank.
+    let left = start, right = start;
+    while (left > 0 && text[left - 1] === '_') left--;
+    while (right < text.length && text[right] === '_') right++;
+    if (right - left >= 4) { start = left; end = right; }
+    else if (untouched) {
+      const blank = text.indexOf('____', box === lastBox ? start : 0), first = blank === -1 ? text.indexOf('____') : blank;
+      if (first !== -1) { start = first; end = first + 4; while (text[end] === '_') end++; }
+      else if (box !== lastBox) start = end = text.length;
+      else name = ', ' + name;
+    }
+  }
+  box.focus();
+  box.setRangeText(name, start, end, 'end');
+  box.dataset.inserted = String(box.selectionStart);
+  box.dispatchEvent(new Event('input', {bubbles: true}));
+}
+
+const norm = v => typeof v === 'number' ? Math.round(v * 10000) / 10000 : v;
+const rowKey = r => JSON.stringify(r.map(norm));
+function permutations(n) {
+  if (n <= 1) return [[0]];
+  const out = [];
+  for (const p of permutations(n - 1)) for (let i = 0; i <= p.length; i++) out.push([...p.slice(0, i), n - 1, ...p.slice(i)]);
+  return out;
+}
+// Compare results, not code. Columns may be in a different order, and names are not checked.
+// What to look at when the number of rows is wrong: the first part of the query that explains the difference.
+function rowsAdvice(query, answer, got, want) {
+  const top = text => mask(bare(statements(text).pop() || ''), true).toLowerCase();   // without quoted text or anything inside brackets
+  const q = top(query), a = top(answer);
+  const has = (text, part) => new RegExp('\\b' + part + '\\b').test(text);
+  const limit = q.match(/\blimit\s+(\d+)/);
+  if (got === 1 && want > 1 && /\b(count|sum|avg|min|max|total)\s*\(/.test(q) && !has(q, 'group\\s+by')) return 'Without GROUP BY, a function such as COUNT gives one row for the whole table.';
+  if (got > want && has(q, 'join') && !has(q, 'on') && !has(q, 'using')) return 'A join needs ON. Without it, every row is matched with every row of the other table.';
+  if (limit && has(a, 'limit') && Number(limit[1]) === got) return 'Check the number after LIMIT.';
+  if (limit && !has(a, 'limit') && got < want) return 'Your LIMIT cuts off rows that the answer keeps.';
+  if (got > want && has(a, 'limit') && !limit) return 'Use LIMIT to keep that many rows.';
+  if (got > want && has(a, 'distinct') && !has(q, 'distinct') && !has(q, 'group\\s+by')) return 'To show each value once, use SELECT DISTINCT.';
+  if (got > want && has(q, 'group\\s+by') && !has(a, 'group\\s+by')) return 'The answer is one row for the whole table, so it has no GROUP BY.';
+  if (got > want && has(a, 'where') && !has(q, 'where') && !has(q, 'having')) return 'Your query has no WHERE, so it keeps every row.';
+  if (got < want && has(q, 'join') && !has(q, 'left\\s+(outer\\s+)?join') && has(a, 'left\\s+join')) return 'A plain JOIN drops the rows that have no match. LEFT JOIN keeps them.';
+  if (got < want && has(q, 'where') && !has(a, 'where')) return 'Your WHERE leaves out rows that the answer keeps.';
+  return 'Check your filters, and whether you kept or dropped missing values.';
+}
+// A preview of a table passes with any five of its rows, in any order.
+function fiveRowsOf(table, mine) {
+  const all = run(`SELECT * FROM ${table}`), rows = new Set(all.values.map(rowKey));
+  const keys = mine.values.map(r => rows.has(rowKey(r)) ? rowKey(r) : rowKey([...r].reverse()));
+  return mine.columns.length === all.columns.length && new Set(keys).size === 5 && keys.every(k => rows.has(k));
+}
+function compare(mine, expected, ordered, query, answer) {
+  if (!mine.columns.length)
+    return {ok: false, msg: `Your query returned no rows; the answer has ${expected.values.length.toLocaleString('en-US')}. Check your WHERE test. Text in quotes must match exactly, including capital letters. To list the values in a column, use SELECT DISTINCT in the scratch query box.`};
+  if (mine.columns.length !== expected.columns.length)
+    return {ok: false, msg: `Your result has ${mine.columns.length} column${mine.columns.length === 1 ? '' : 's'}; the answer has ${expected.columns.length}.`};
+  if (mine.values.length !== expected.values.length)
+    return {ok: false, msg: `Your result has ${mine.values.length.toLocaleString('en-US')} row${mine.values.length === 1 ? '' : 's'}; the answer has ${expected.values.length.toLocaleString('en-US')}. ${query ? rowsAdvice(query, answer, mine.values.length, expected.values.length) : 'Check your filters, and whether you kept or dropped missing values.'}`};
+  const exp = expected.values.map(rowKey), expSorted = [...exp].sort();
+  const byName = expected.columns.map(c => mine.columns.indexOf(c));
+  const perms = mine.columns.length <= 4 ? permutations(mine.columns.length) : [byName.includes(-1) ? mine.columns.map((_, i) => i) : byName];
+  let sameRowsWrongOrder = false;
+  for (const perm of perms) {
+    const got = mine.values.map(r => rowKey(perm.map(i => r[i])));
+    if (got.every((k, i) => k === exp[i])) return {ok: true};
+    const gotSorted = [...got].sort();
+    if (gotSorted.every((k, i) => k === expSorted[i])) {
+      if (!ordered) return {ok: true};
+      if (typeof ordered === 'object') {
+        const key = expected.columns.indexOf(ordered.column);
+        if (key >= 0) {
+          const values = mine.values.map(r => r[perm[key]]);
+          const direction = ordered.direction === 'desc' ? -1 : 1;
+          if (values.every((v, i) => i === 0 || direction * (v < values[i - 1] ? -1 : v > values[i - 1] ? 1 : 0) >= 0)) return {ok: true};
+        }
+      }
+      sameRowsWrongOrder = true;
+    }
+  }
+  if (sameRowsWrongOrder) return {ok: false, msg: 'You have the right rows, but in a different order. Check your ORDER BY.'};
+  return {ok: false, msg: 'The result has the right number of rows and columns, but some values differ. Read the task again.'};
+}
+
+function setFeedback(el, kind, html) { el.className = `feedback show ${kind}`; el.innerHTML = html; }
+
+function renderSteps() {
+  $('steps').innerHTML = STEPS.map((s, i) => {
+    const example = s.example ? `<div class="examples">${s.example.sql ? `<div class="example main"><div class="label">SQL example</div><pre>${esc(s.example.sql)}</pre></div>` : ''}${s.example.pandas ? `<div class="example"><div class="label">The same in pandas</div><pre>${esc(s.example.pandas)}</pre></div>` : ''}${s.example.r ? `<div class="example"><div class="label">The same in R</div><pre>${esc(s.example.r)}</pre></div>` : ''}</div>${s.example.sql ? `<div class="actions"><button data-act="example" data-q="${i}" disabled>Run the example</button></div><div id="s${i}-example"></div>` : ''}` : '';
+    const work = s.handoff ? `<p>The instructions are in <code>README.md</code>, in the <code>lessons/week05_relational-data</code> folder of the course repo. Open it in VS Code.</p>
+      <p><a class="button" href="https://github.com/macss-berkeley/compss-211a/tree/main/lessons/week05_relational-data" target="_blank" rel="noopener">See the folder on GitHub</a></p>
+      <p class="small">If DuckDB does not run on your laptop or your partner’s, <a href="${esc(FOOD_FALLBACK)}" target="_blank" rel="noopener">use DuckDB in your browser with the two tables loaded</a>.</p>
+`
+      : s.outside ? `<p>The <code>requests</code> table on this page is a saved copy. The city keeps the live table on DataSF, its open data site. DataSF accepts SoQL, a SQL-like query language, in a web address.</p>
+      <pre class="answer">${esc(DATASF_QUERY)}</pre>
+      <p><a class="button" href="${esc(DATASF_URL)}" target="_blank" rel="noopener">Run this query on DataSF</a></p>
+      <p>The city calls the channel column <code>source</code>. There is no <code>FROM</code>, because the address names the table. The result is JSON. The counts can differ from the example in step ${STEPS.findIndex(x => x.topic === 'Count groups') + 1}, because the live records can change and this query includes Test records.</p>
+      <p><button data-next>Next step</button></p>`
+      : !s.answer ? '<p><button class="primary" data-next>Next step</button></p>'
+      : `<h4>${s.guided ? 'Worked example' : 'Your turn'}</h4><p class="task">${s.task}</p>
+      <div class="tabs" role="tablist" aria-label="Language">
+        <button type="button" role="tab" data-tab="sql" data-q="${i}" aria-selected="true">SQL</button>
+        <button type="button" role="tab" data-tab="py" data-q="${i}" aria-selected="false" disabled>Python</button>
+        <button type="button" role="tab" data-tab="r" data-q="${i}" aria-selected="false" disabled>R</button>
+      </div>
+      <div id="s${i}-panel-sql">
+      <label class="small" for="s${i}-sql">Your query</label>
+      <textarea id="s${i}-sql" spellcheck="false" autocomplete="off" rows="${Math.max(6, (s.scaffold || s.starter).split('\n').length + 1)}">${esc(s.starter)}</textarea>
+      <div class="actions">
+        <button data-act="run" data-q="${i}" disabled>Run</button>
+        <button class="primary" data-act="check" data-q="${i}" id="s${i}-check" disabled>Check answer</button>
+        <button data-next id="s${i}-next">Next step</button>
+        <span class="small">Ctrl or ⌘ + Enter runs the query.</span>
+      </div>
+      <div class="feedback" id="s${i}-fb" aria-live="polite"></div>
+      <div id="s${i}-out"></div>
+      <details><summary>Hint</summary><div>${s.hint}</div>${s.scaffold ? `<p><button data-scaffold="${i}">Put a starting point in the box</button></p>` : ''}</details>
+      <details id="s${i}-answer" hidden><summary>One possible answer</summary><pre class="answer">${esc(s.answer)}</pre></details>
+      <p class="small" id="s${i}-answer-wait">One possible answer appears here after you have checked an answer of your own.</p>
+      </div>
+      <div id="s${i}-panel-py" hidden>
+        <p class="small">The same task in pandas. The two tables are loaded as DataFrames with the same names. This tab is not checked or saved.</p>
+        <div id="s${i}-py"></div>
+        <details id="s${i}-py-answer" hidden><summary>One possible answer</summary><pre class="answer">${esc(s.py)}</pre></details>
+        <p class="small" id="s${i}-py-answer-wait">One possible answer appears here after you have run code of your own.</p>
+      </div>
+      <div id="s${i}-panel-r" hidden>
+        <p class="small">The same task in R. The two tables are loaded as data frames with the same names, and dplyr is loaded. This tab is not checked or saved.</p>
+        <div id="s${i}-r"></div>
+        <details id="s${i}-r-answer" hidden><summary>One possible answer</summary><pre class="answer">${esc(s.r)}</pre></details>
+        <p class="small" id="s${i}-r-answer-wait">One possible answer appears here after you have run code of your own.</p>
+      </div>`;
+    return `<section class="q" id="s${i}" aria-labelledby="s${i}-title" hidden>
+      <div class="level">Step ${i + 1} of ${STEPS.length}${s.extra ? ' · Optional' : s.challenge ? ' · Challenge' : s.guided ? ' · Guided' : ''}</div>
+      <h2 id="s${i}-title" tabindex="-1">${esc(s.topic)}</h2>
+      ${s.intro ? `<p>${s.intro}</p>` : ''}
+      ${example}
+      ${work}
+    </section>`;
+  }).join('');
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify({current, solved: [...solved], tried: [...tried], scratch: $('scratch').value, queries: STEPS.map((s, i) => s.answer ? $(`s${i}-sql`).value : null)}));
+  } catch (error) { /* storage is unavailable; the page works without it */ }
+}
+function restore() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (!saved || !Array.isArray(saved.queries) || saved.queries.length !== STEPS.length) return;
+    saved.queries.forEach((text, i) => { if (typeof text === 'string' && STEPS[i].answer) $(`s${i}-sql`).value = text; });
+    (saved.solved || []).forEach(i => { if (Number.isInteger(i) && i >= 0 && i < STEPS.length) solved.add(i); });
+    (saved.tried || []).forEach(i => { if (Number.isInteger(i) && i >= 0 && i < STEPS.length) tried.add(i); });
+    if (typeof saved.scratch === 'string') $('scratch').value = saved.scratch;
+    if (Number.isInteger(saved.current)) current = saved.current;
+  } catch (error) { /* ignore unreadable saved state */ }
+}
+
+// One step is visible at a time. The others stay in the page, so their queries are kept.
+function show(i, focus = true) {
+  current = Math.max(0, Math.min(STEPS.length - 1, i));
+  STEPS.forEach((_, n) => { $(`s${n}`).hidden = n !== current; });
+  const from = STEPS[current].startFrom && STEPS.findIndex(x => x.topic === STEPS[current].startFrom);
+  if (from && !$(`s${current}-sql`).value.trim()) $(`s${current}-sql`).value = solved.has(from) ? $(`s${from}-sql`).value : STEPS[from].answer;
+  $('picker').innerHTML = STEPS.map((s, n) => `<option value="${n}"${n === current ? ' selected' : ''}>${n + 1}. ${esc(s.topic)}${solved.has(n) ? ' ✓' : ''}</option>`).join('');
+  $('prev').disabled = current === 0;
+  $('next').disabled = current === STEPS.length - 1;
+  STEPS.forEach((s, n) => { if (s.answer) { $(`s${n}-check`).classList.toggle('primary', !solved.has(n)); $(`s${n}-next`).classList.toggle('primary', solved.has(n)); } });
+  showAnswers();
+  const main = STEPS.map((s, n) => n).filter(n => STEPS[n].answer && !STEPS[n].extra);
+  $('progress').textContent = `${main.filter(n => solved.has(n)).length} of ${main.length} checked`;
+  if (focus) $(`s${current}-title`).focus();
+  save();
+}
+
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-next]')) { show(current + 1); return; }
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { openTab(Number(tab.dataset.q), tab.dataset.tab); return; }
+  const name = e.target.closest('[data-name]');
+  if (name) { insertName(name.dataset.name); return; }
+  const scaffold = e.target.closest('[data-scaffold]');
+  if (scaffold) {
+    const i = Number(scaffold.dataset.scaffold), box = $(`s${i}-sql`);
+    if (box.value.trim() && box.value.trim() !== STEPS[i].starter.trim() && !window.confirm('Replace what is in the box with a starting point?')) return;
+    box.value = STEPS[i].scaffold;
+    box.dispatchEvent(new Event('input', {bubbles: true}));
+    box.focus();
+    return;
+  }
+  const duck = e.target.closest('[data-duck]');
+  if (duck) {
+    try {
+      const queries = statements($(duck.dataset.duck).value);
+      if (queries.length) window.open(duckLink(queries), '_blank', 'noopener');
+    } catch (error) {
+      const fb = duck.closest('.q')?.querySelector('.feedback') || $('scratch-fb');
+      setFeedback(fb, 'bad', esc(error.message));
+    }
+    return;
+  }
+  const b = e.target.closest('button[data-act]');
+  if (!b || !db) return;
+  if (b.dataset.act === 'scratch') { runScratch(); return; }
+  const i = Number(b.dataset.q), s = STEPS[i];
+  if (b.dataset.act === 'example') { $(`s${i}-example`).innerHTML = renderOutput(s.example.sql, run(s.example.sql)); if (changesViews(s.example.sql)) renderSchema(); return; }
+  const fb = $(`s${i}-fb`), out = $(`s${i}-out`);
+  const query = $(`s${i}-sql`).value.trim();
+  if (query.includes('____')) { setFeedback(fb, 'bad', 'Replace every <code>____</code> first.'); out.innerHTML = ''; return; }
+  if (!statements(query).length) { setFeedback(fb, 'bad', 'Write a query first.'); out.innerHTML = ''; return; }
+  let mine;
+  try { mine = run(query); }
+  catch (error) { setFeedback(fb, 'bad', explainError(error.message)); out.innerHTML = ''; if (b.dataset.act === 'check') { tried.add(i); showAnswers(); save(); } return; }
+  if (changesViews(query)) renderSchema();
+  out.innerHTML = renderOutput(query, mine);
+  if (b.dataset.act === 'run') { fb.className = 'feedback'; save(); return; }
+  // A step that builds a view is checked on the view's rows. expect is the model result, written without the student's views.
+  let result;
+  try { result = s.accept && s.accept(mine) ? {ok: true} : compare(s.view ? run(`SELECT * FROM ${s.view}`) : mine, run(s.expect || s.answer), s.ordered, query, s.answer); }
+  catch (error) { setFeedback(fb, 'bad', explainError(error.message)); tried.add(i); showAnswers(); save(); return; }
+  if (!result.ok && s.wrong && result.msg.startsWith('The result has the right number')) result.msg = s.wrong;
+  if (result.ok) {
+    solved.add(i);
+    setFeedback(fb, 'good', `<p><strong>Correct.</strong></p>${s.after ? `<p>${s.after}</p>` : ''}`);
+    show(current, false);
+  } else {
+    setFeedback(fb, 'bad', esc(result.msg));
+    tried.add(i);
+    showAnswers();
+    save();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && e.target.matches('textarea:not(.sbx-code)')) {
+    e.preventDefault();
+    if (e.target.id === 'scratch') { if (db) runScratch(); }
+    else e.target.closest('.q').querySelector('[data-act="run"]')?.click();
+  }
+});
+document.addEventListener('input', e => { if (e.target.matches('textarea:not(.sbx-code)')) save(); });
+
+renderSteps();
+restore();
+$('picker').addEventListener('change', e => show(Number(e.target.value)));
+$('prev').addEventListener('click', () => show(current - 1));
+$('next').addEventListener('click', () => show(current + 1));
+$('reset').addEventListener('click', () => {
+  if (!window.confirm('Clear all your queries and checks on this page?')) return;
+  try { localStorage.removeItem(STORE); } catch (error) { /* nothing was saved */ }
+  location.reload();
+});
+// On a narrow screen the table list starts closed, so the step is visible first.
+if (window.matchMedia('(max-width: 860px)').matches) $('tablesBox').open = false;
+show(current, false);
+
+function fail(message) { $('engineStatus').className = 'status error'; $('engineStatus').textContent = message; }
+if (typeof initSqlJs !== 'function') {
+  fail('The SQL engine could not load. This page needs an internet connection. Reload when you are online.');
+} else {
+  initSqlJs({locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${file}`}).then(async lib => {
+    SQL = lib;
+    db = new SQL.Database();
+    await loadTables();
+    STEPS.forEach((s, i) => { if (s.view && solved.has(i)) { try { db.exec($(`s${i}-sql`).value); } catch (error) { /* the student can run the step again */ } } });
+    renderSchema();
+    document.querySelectorAll('button[data-act], button[data-tab]').forEach(b => b.disabled = false);
+    $('engineStatus').className = 'status ready';
+    show(current, false);
+  }).catch(error => fail('The tables could not load. Check your internet connection and reload the page. (' + error.message + ')'));
+}
+</script>
+</body>
+</html>

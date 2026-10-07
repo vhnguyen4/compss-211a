@@ -9,12 +9,10 @@ During the semester, you will:
 
 - use Python and Pandas to work with tabular data;
 - use Git, GitHub, and the command line to keep projects organized and reviewable;
-- compare CSV, TSV, JSON, and XML data, then collect records through web APIs;
+- compare CSV, JSON, and XML data, then collect records through web APIs;
 - clean and represent text with counts, TF-IDF, and lightweight document embeddings;
 - test AI-generated code and evaluate LLM output against simpler methods;
 - move selected workflows between local VS Code, Google Colab, and cloud APIs.
-
-Some exercises use public snapshots; others use synthetic data written for class. Either way, a result is only as good as its source, checks, and interpretation. You are expected to understand submitted code, document AI assistance, keep credentials out of notebooks, and remain accountable for every claim.
 
 The course ends with a team project based on a text dataset. Your team will pose a social-science question, build a reproducible analysis, inspect errors and limitations, and present the result through a reproducible repository, a public-facing website, and a short website walkthrough.
 
@@ -36,11 +34,24 @@ code .
 This updates the course files, refreshes the locked `.venv` environment, and
 opens the complete repository in VS Code.
 
+Work in your own copies of course notebooks, not the originals: duplicate a
+notebook in the same folder and add `_mine` to the end of its name (for example
+`week04_reproducible_analysis_mine.ipynb`). Git ignores these copies, so pulling never
+causes a conflict. See [Working on your own copies](SETUP.md#working-on-your-own-copies).
+
+For [Week 4: Building Reproducible Analyses](lessons/week04_reproducible-analyses/README.md),
+copy the entire practice folder as described on the lesson page: you will edit a
+Python script as well as the notebook.
+
+For [Week 5: Relational Data and SQL](lessons/week05_relational-data/README.md),
+the lesson page lists the SQL workspace, the DuckDB worksheet and Friday's lab.
+
 ## Course data
 
 The local fixtures required by homework and lab notebooks are committed under
-[`data/`](data/). Their sources, synthetic-data labels, and interpretation
-limits are documented in [`data/README.md`](data/README.md).
+[`data/`](data/). Several of the real datasets have a `*_provenance.json` file
+beside them that records the source, the request, and the retrieval date. The
+notebook that uses a file explains what it can and cannot show.
 
 ## Google Colab
 
